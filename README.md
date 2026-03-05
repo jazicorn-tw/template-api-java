@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/spring--boot-4.x-brightgreen" alt="Spring Boot 4">
   <img src="https://img.shields.io/badge/database-postgresql-blue" alt="PostgreSQL">
   <!-- markdownlint-disable-next-line MD013 -->
-  <a href="https://github.com/your-org/{{project-name}}/actions/workflows/ci-test.yml"><img src="https://github.com/your-org/{{project-name}}/actions/workflows/ci-test.yml/badge.svg" alt="CI"></a>
+  <!--<a href="https://github.com/your-org/{{project-name}}/actions/workflows/ci-test.yml"><img src="https://github.com/your-org/{{project-name}}/actions/workflows/ci-test.yml/badge.svg" alt="CI"></a>-->
 </p>
 
 ---
