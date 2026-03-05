@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Pre-commit hook aligned with ADR-000 (Quality Gates)
+# Goal: fast, consistent feedback before code leaves your machine.
+#
+# Default behavior:
+# - Auto-format staged changes (Spotless) to prevent style-only CI failures
+# - Run lint/static analysis for main sources (fast-ish)
+# - Skip tests by default (tests are enforced in CI via ./gradlew clean check)
+#
+# Overrides (one-off per commit):
+# - SKIP_QUALITY=1 git commit ...   -> skip this hook once
+# - RUN_TESTS=1 git commit ...      -> also run unit tests
+# - AUTO_FORMAT=0 git commit ...    -> do NOT run spotlessApply (validate only)
+# - DEBUG_PRECOMMIT=1 git commit ...-> print debug info about what triggered the hook
+
+log() { printf '%s\n' "$*"; }
+debug() {
+  if [[ "${DEBUG_PRECOMMIT:-}" == "1" ]]; then
+    printf '%s\n' "pre-commit(debug): $*"
+  fi
+}
+
+if [[ "${SKIP_QUALITY:-}" == "1" ]]; then
+  log "pre-commit: SKIP_QUALITY=1 set; skipping quality gate."
+  exit 0
+fi
+
+# Ensure we're at repo root even if invoked from subdir
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+# Only run if relevant files are staged
+CHANGED="$(git diff --cached --name-only --diff-filter=ACMR || true)"
+
+debug "staged files:" 
+debug "${CHANGED:-<none>}"
+
+should_run=false
+triggered_by=""
+
+while IFS= read -r f; do
+  [[ -z "$f" ]] && continue
+
+  case "$f" in
+    *.java|build.gradle|settings.gradle|gradle.properties|src/*|config/*|.github/workflows/*)
+      should_run=true
+      triggered_by="$f"
+      break
+      ;;
+  esac
+
+done <<< "$CHANGED"
+
+if [[ "$should_run" != "true" ]]; then
+  log "pre-commit: no relevant files staged; skipping quality gate."
+  exit 0
+fi
+
+debug "triggered by: $triggered_by"
+
+log "pre-commit: running ADR-000 quality gate (format + lint/static analysis)..."
+
+# Spotless validation (does NOT mutate working tree).
+# If it fails, we fail the commit and tell you to run `make format` first.
+if [[ "${AUTO_FORMAT:-1}" != "0" ]]; then
+  if ! ./gradlew --no-daemon --no-configuration-cache -q spotlessCheck; then
+    log "pre-commit: ❌ Spotless check failed."
+    log "pre-commit: run \`make format\`, then stage intentionally and commit again."
+    exit 1
+  fi
+else
+  log "pre-commit: AUTO_FORMAT=0 set; skipping spotlessCheck."
+fi
+
+# Static analysis (main sources)
+./gradlew --no-daemon -q checkstyleMain pmdMain spotbugsMain
+
+if [[ "${RUN_TESTS:-}" == "1" ]]; then
+  log "pre-commit: RUN_TESTS=1 set; running unit tests..."
+  ./gradlew --no-daemon -q test
+fi

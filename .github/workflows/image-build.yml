@@ -1,0 +1,80 @@
+name: Build Image
+
+on:
+  pull_request:
+    branches: [ main, staging, dev ]
+  push:
+    branches: [ main, staging, dev ]
+    paths:
+      - 'Dockerfile'
+      - 'src/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - 'gradle/**'
+      - 'helm/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-image-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ACT: ""
+
+jobs:
+  build:
+    name: Docker build (no push)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image (CI only, no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          platforms: linux/amd64
+          tags: {{project-name}}:ci
+          labels: |
+            org.opencontainers.image.source=${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  helm-lint:
+    name: Helm lint (CI only)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # GitHub-hosted runners: use toolcache via setup-helm
+      - name: Set up Helm (GitHub runners)
+        if: ${{ !env.ACT }}
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.4
+
+      # act local runs: install Helm without hostedtoolcache or apt repos
+      - name: Install Helm (act)
+        if: ${{ env.ACT }}
+        run: |
+          set -euo pipefail
+          HELM_VERSION="v3.14.4"
+          curl -fsSLo /tmp/helm.tgz "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz"
+          tar -xzf /tmp/helm.tgz -C /tmp
+          install -m 0755 /tmp/linux-amd64/helm /usr/local/bin/helm
+          helm version
+
+      - name: Helm lint
+        run: helm lint helm/app

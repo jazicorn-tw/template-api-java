@@ -1,0 +1,82 @@
+name: CI Quality
+
+on:
+  pull_request:
+  push:
+    branches: [ main, staging, dev ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write  # required for SonarCloud PR decoration
+
+concurrency:
+  group: ci-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Spotless + static analysis (no Docker)
+    runs-on: ubuntu-latest
+
+    env:
+      CI: true
+      GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: ./.github/actions/setup-java-gradle
+        with:
+          gradle-cache: 'true'
+
+      - name: Spotless check
+        run: ./gradlew spotlessCheck --no-daemon --stacktrace
+
+      - name: Static analysis (Checkstyle/PMD/SpotBugs)
+        run: ./gradlew checkstyleMain checkstyleTest pmdMain pmdTest spotbugsMain spotbugsTest --no-daemon --stacktrace
+
+      - name: Cache SonarCloud packages
+        if: ${{ github.actor != 'nektos/act' }}
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Sonar analysis
+        if: ${{ github.actor != 'nektos/act' }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SONAR_TOKEN:-}" ]; then
+            echo "::warning::SONAR_TOKEN not set — skipping Sonar analysis"
+            exit 0
+          fi
+          echo "::group::🔍 Sonar analysis"
+          ./gradlew test jacocoTestReport sonar --no-daemon --no-configuration-cache --info
+          echo "::endgroup::"
+
+  markdown-lint:
+    name: Markdown lint (markdownlint-cli2)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint markdown files
+        run: ./node_modules/.bin/markdownlint-cli2 '**/*.md' '#node_modules'

@@ -1,0 +1,179 @@
+import org.gradle.process.CommandLineArgumentProvider
+
+plugins {
+  id 'java'
+  id 'org.springframework.boot' version '4.0.0'
+  id 'io.spring.dependency-management' version '1.1.7'
+
+  // ===============================
+  // Formatting / Linting / Static Analysis
+  // ===============================
+  id 'com.diffplug.spotless' version '6.25.0'
+  id 'checkstyle'
+  id 'pmd'
+  id 'com.github.spotbugs' version '6.0.26'
+
+  // ===============================
+  // Code Quality / Coverage
+  // ===============================
+  id 'org.sonarqube' version '7.2.3.7755'
+  id 'jacoco'
+
+  // ===============================
+  // Flyway/ DB Migration
+  // ===============================
+  id 'org.flywaydb.flyway' version '11.2.0'
+}
+
+// Force Flyway version to bypass Spring Boot 4.0's internal dependency management
+ext['flyway.version'] = '11.2.0'
+
+group = 'com.example'
+version = (findProperty('releaseVersion') ?: '0.0.1-SNAPSHOT')
+description = '{{project-name}} — Spring Boot 4 backend API scaffold'
+
+java {
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(21)
+  }
+}
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  // ===============================
+  // Core Spring Boot
+  // ===============================
+  implementation 'org.springframework.boot:spring-boot-starter-web'
+  implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+  implementation 'org.springframework.boot:spring-boot-starter-validation'
+  implementation 'org.springframework.boot:spring-boot-starter-security'
+  implementation 'org.springframework.boot:spring-boot-starter-actuator'
+  implementation 'org.springframework:spring-webflux'
+
+  // ===============================
+  // Database & migration
+  // ===============================
+  implementation 'org.springframework.boot:spring-boot-starter-flyway'
+  implementation 'org.flywaydb:flyway-core:11.2.0'
+  runtimeOnly 'org.flywaydb:flyway-database-postgresql:11.2.0'
+
+  runtimeOnly 'com.h2database:h2'
+  runtimeOnly 'org.postgresql:postgresql'
+
+  // ===============================
+  // Developer experience
+  // ===============================
+  developmentOnly 'org.springframework.boot:spring-boot-devtools'
+  annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+  // ===============================
+  // Testing
+  // ===============================
+  testImplementation 'org.springframework.boot:spring-boot-starter-test'
+  testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+  testImplementation 'org.springframework.security:spring-security-test'
+  testImplementation 'org.mockito:mockito-core'
+  testImplementation 'org.mockito:mockito-junit-jupiter'
+  testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+  testImplementation platform('org.testcontainers:testcontainers-bom:1.20.4')
+  testImplementation 'org.testcontainers:junit-jupiter'
+  testImplementation 'org.testcontainers:postgresql'
+  testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+flyway {
+    url = System.getProperty('SPRING_DATASOURCE_URL')
+    user = System.getProperty('SPRING_DATASOURCE_USERNAME')
+    password = System.getProperty('SPRING_DATASOURCE_PASSWORD')
+
+    cleanDisabled = false
+
+    // IMPORTANT: This empty list prevents the plugin from looking for
+    // JavaPluginConvention to find source sets.
+    configurations = []
+}
+
+/**
+ * Adds Mockito as a proper -javaagent for Java 21+.
+ */
+class MockitoAgentArgumentProvider implements CommandLineArgumentProvider {
+  private final FileCollection testRuntimeClasspath
+
+  MockitoAgentArgumentProvider(FileCollection testRuntimeClasspath) {
+    this.testRuntimeClasspath = testRuntimeClasspath
+  }
+
+  @Override
+  Iterable<String> asArguments() {
+    def mockitoCoreJar = testRuntimeClasspath.files.find { it.name ==~ /mockito-core-.*\.jar/ }
+    if (mockitoCoreJar == null) {
+      throw new GradleException("Mockito agent jar not found.")
+    }
+    return ["-javaagent:${mockitoCoreJar.absolutePath}".toString()]
+  }
+}
+
+tasks.withType(Test).configureEach {
+  useJUnitPlatform()
+  jvmArgumentProviders.add(new MockitoAgentArgumentProvider(configurations.testRuntimeClasspath))
+}
+
+spotless {
+  java {
+    googleJavaFormat('1.19.2')
+    target 'src/**/*.java'
+  }
+  groovyGradle {
+    target '*.gradle', 'gradle/**/*.gradle'
+    trimTrailingWhitespace()
+    endWithNewline()
+    indentWithSpaces(2)
+  }
+}
+
+checkstyle {
+  toolVersion = '10.17.0'
+  ignoreFailures = false
+  configFile = file("$rootDir/.config/checkstyle/checkstyle.xml")
+}
+
+pmd {
+  toolVersion = '7.5.0'
+  consoleOutput = true
+  ruleSets = ['category/java/bestpractices.xml', 'category/java/errorprone.xml']
+}
+
+spotbugs {
+  toolVersion = '4.8.6'
+}
+
+tasks.withType(com.github.spotbugs.snom.SpotBugsTask).configureEach {
+  reports {
+    xml.required = true
+    html.required = true
+  }
+  effort.set(com.github.spotbugs.snom.Effort.MAX)
+  reportLevel.set(com.github.spotbugs.snom.Confidence.values()[0])
+}
+
+tasks.named("check") { dependsOn("spotlessCheck") }
+
+sonar {
+  properties {
+    property 'sonar.projectKey', 'your-org_{{project-name}}'
+    property 'sonar.organization', 'your-org'
+    property 'sonar.host.url', 'https://sonarcloud.io'
+    property 'sonar.coverage.jacoco.xmlReportPaths', 'build/reports/jacoco/test/jacocoTestReport.xml'
+  }
+}
+
+jacocoTestReport {
+  dependsOn test
+  reports {
+    xml.required = true
+    html.required = false
+  }
+}

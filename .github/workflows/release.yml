@@ -1,0 +1,396 @@
+name: Release (semantic-release)
+
+on:
+  # Automatic releases from main *only* when explicitly enabled.
+  push:
+    branches:
+      - main
+
+  # Manual run (useful for one-off releases)
+  workflow_dispatch:
+    inputs:
+      enable_release:
+        description: "Run semantic-release for this run (overrides repo variable gate)"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  packages: write
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    outputs:
+      published_version: ${{ steps.semrel-publish.outputs.published_version }}
+      preview_next_version: ${{ steps.semrel-preview.outputs.next_version }}
+
+    # Gate releases behind an explicit boolean.
+    #
+    # Set repo variable ENABLE_SEMANTIC_RELEASE=true to allow push-based releases.
+    # For manual runs, set workflow input enable_release=true.
+    if: ${{ inputs.enable_release == 'true' || vars.ENABLE_SEMANTIC_RELEASE == 'true' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Disable git hooks for release automation
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/empty-git-hooks
+          git config core.hooksPath /tmp/empty-git-hooks
+
+      # ------------------------------------------------------------
+      # Runner temp dirs (act only)
+      # ------------------------------------------------------------
+
+      - name: Ensure runner temp dirs (act only)
+        if: ${{ github.actor == 'nektos/act' }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/runner-temp /tmp/runner-tool-cache
+          echo "RUNNER_TEMP=/tmp/runner-temp" >> "$GITHUB_ENV"
+          echo "RUNNER_TOOL_CACHE=/tmp/runner-tool-cache" >> "$GITHUB_ENV"
+
+      # ------------------------------------------------------------
+      # Gradle cache isolation (important for act stability)
+      # ------------------------------------------------------------
+
+      - name: Set Gradle user home
+        run: |
+          set -euo pipefail
+          # Prefer RUNNER_TEMP when available; fall back to /tmp for portability.
+          echo "GRADLE_USER_HOME=${RUNNER_TEMP:-/tmp}/gradle-home" >> "$GITHUB_ENV"
+
+      - name: Generate GitHub App token
+        id: app-token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ secrets.GH_APP_ID }}
+          private_key: ${{ fromJSON(format('"{0}"', secrets.GH_APP_PRIVATE_KEY)) }}
+
+      - name: Force HTTPS git remote (avoid SSH in act)
+        run: |
+          set -euo pipefail
+
+          # Ensure the token never shows up in logs
+          echo "::add-mask::${GH_TOKEN}"
+
+          # Make origin use HTTPS (semantic-release calls git under the hood)
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          # Also rewrite any ssh-style GitHub URLs that tools might use
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - name: Release gate summary
+        run: |
+          set -euo pipefail
+          echo "::group::🚦 Release gate evaluation"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🚦 Release gate evaluation"
+          echo ""
+          echo "Event:              ${{ github.event_name }}"
+          echo "Branch:             ${{ github.ref_name }}"
+          echo "Manual input:       ${{ inputs.enable_release || 'n/a' }}"
+          echo "Repo gate var:      ${{ vars.ENABLE_SEMANTIC_RELEASE || 'unset' }}"
+          echo "Docker publish var: ${{ vars.PUBLISH_DOCKER_IMAGE || 'unset' }}"
+          echo "Helm publish var:   ${{ vars.PUBLISH_HELM_CHART || 'unset' }}"
+          echo "Canonical repo:     ${{ vars.CANONICAL_REPOSITORY || 'unset' }}"
+          echo "This repo:          ${{ github.repository }}"
+          echo ""
+          echo "Gate result: ALLOWED"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "::endgroup::"
+
+      - name: Set up Java 21 + Gradle
+        uses: ./.github/actions/setup-java-gradle
+        with:
+          setup-gradle: 'true'
+
+      - name: Gradle (act only — lightweight)
+        if: ${{ github.actor == 'nektos/act' }}
+        run: |
+          set -euo pipefail
+          echo "::group::🐘 Gradle (act)"
+          echo "GRADLE_USER_HOME=${GRADLE_USER_HOME}"
+          ./gradlew --version
+          echo "::endgroup::"
+
+      - name: Set up Node (CI only)
+        if: ${{ github.actor != 'nektos/act' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Node (act only — use preinstalled)
+        if: ${{ github.actor == 'nektos/act' }}
+        run: |
+          set -euo pipefail
+          echo "::group::🟩 Node (act)"
+          node --version
+          npm --version
+          echo "::endgroup::"
+
+      - name: Install semantic-release deps
+        run: npm ci
+
+      - name: Preview next release version (dry-run)
+        id: semrel-preview
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+
+          echo "::group::🔎 semantic-release dry-run (preview)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🔎 semantic-release dry-run (preview)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          npx semantic-release --dry-run --no-ci | tee semantic-release-dryrun.log
+
+          # Best-effort extraction of the computed next version (format varies by plugins).
+          next_version="$(
+            grep -Eo 'next release version is [0-9]+\.[0-9]+\.[0-9]+' semantic-release-dryrun.log               | tail -n 1               | awk '{print $NF}'               || true
+          )"
+
+          if [ -n "$next_version" ]; then
+            echo ""
+            echo "✅ Next version (if published): $next_version"
+            echo "next_version=$next_version" >> "$GITHUB_OUTPUT"
+          else
+            echo ""
+            echo "ℹ️ No next version detected (likely: no releasable commits)."
+          fi
+
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "::endgroup::"
+
+      - name: Run semantic-release (act dry-run only)
+        if: ${{ github.actor == 'nektos/act' }}
+        id: semrel
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+
+          echo "::group::🚫 semantic-release (act) — dry-run only (no publish)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🚫 semantic-release (act) — dry-run only (no publish)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          # Never publish from local act runs.
+          npx semantic-release --dry-run --no-ci | tee semantic-release.log
+          echo "::endgroup::"
+
+          # Intentionally do NOT set published_version in act mode.
+
+      - name: Run semantic-release (publish)
+        if: ${{ github.actor != 'nektos/act' }}
+        id: semrel-publish
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+
+          echo "::group::🚀 semantic-release publish"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🚀 semantic-release publish"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          npx semantic-release | tee semantic-release.log
+          echo "::endgroup::"
+
+          # Best-effort extraction of the published version.
+          # Common patterns include:
+          # - "Published release <version>"
+          # - "next release version is <version>" (from analyzer output)
+          published_version="$(
+            grep -Eo 'Published release [0-9]+\.[0-9]+\.[0-9]+' semantic-release.log               | tail -n 1               | awk '{print $NF}'               || true
+          )"
+
+          if [ -n "$published_version" ]; then
+            echo "published_version=$published_version" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Post-release summary (what happened)
+        if: always()
+        run: |
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📦 Release outcome"
+          echo ""
+
+          if [ "${{ steps.semrel-publish.outputs.published_version }}" != "" ]; then
+            echo "✅ Published: ${{ steps.semrel-publish.outputs.published_version }}"
+          elif [ "${{ steps.semrel-preview.outputs.next_version }}" != "" ]; then
+            echo "ℹ️ No publish detected. Preview suggested: ${{ steps.semrel-preview.outputs.next_version }}"
+            echo "   (Common cause: semantic-release found no releasable commits or publish step exited early.)"
+          else
+            echo "ℹ️ No release published (likely: no releasable commits)."
+          fi
+
+          echo ""
+          echo "Where to look:"
+          echo "  - semantic-release.log        (publish run)"
+          echo "  - semantic-release-dryrun.log (preview run)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      - name: Write release summary (job summary)
+        if: always()
+        run: |
+          {
+            echo "# 🚀 Release Summary"
+            echo ""
+            echo "## Trigger"
+            echo "- Event: **${{ github.event_name }}**"
+            echo "- Branch: **${{ github.ref_name }}**"
+            echo ""
+            echo "## Gates"
+            echo "- ENABLE_SEMANTIC_RELEASE: **${{ vars.ENABLE_SEMANTIC_RELEASE || 'unset' }}**"
+            echo "- Manual enable_release: **${{ inputs.enable_release || 'n/a' }}**"
+            echo "- PUBLISH_DOCKER_IMAGE: **${{ vars.PUBLISH_DOCKER_IMAGE || 'unset' }}**"
+            echo "- PUBLISH_HELM_CHART: **${{ vars.PUBLISH_HELM_CHART || 'unset' }}**"
+            echo ""
+            if [ "${{ steps.semrel-publish.outputs.published_version }}" != "" ]; then
+              echo "## Outcome"
+              echo "✅ Published version **${{ steps.semrel-publish.outputs.published_version }}**"
+            elif [ "${{ steps.semrel-preview.outputs.next_version }}" != "" ]; then
+              echo "## Outcome"
+              echo "ℹ️ No release published"
+              echo ""
+              echo "Preview suggested version: **${{ steps.semrel-preview.outputs.next_version }}**"
+            else
+              echo "## Outcome"
+              echo "ℹ️ No releasable commits detected"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: release
+
+    # Enforce canonical repository at the job level and only proceed when a version was actually published.
+    if: ${{ github.repository == vars.CANONICAL_REPOSITORY && needs.release.outputs.published_version != '' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Publish summary
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📦 Artifact publishing"
+          echo ""
+          echo "repo=${{ github.repository }}"
+          echo "version=${{ needs.release.outputs.published_version }}"
+          echo "docker_flag=${{ vars.PUBLISH_DOCKER_IMAGE || 'unset' }}"
+          echo "helm_flag=${{ vars.PUBLISH_HELM_CHART || 'unset' }}"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      - name: Write publish summary (job summary)
+        if: always()
+        run: |
+          {
+            echo "# 📦 Artifact Publishing"
+            echo ""
+            echo "| Item | Value |"
+            echo "|------|-------|"
+            echo "| Repository | `${{ github.repository }}` |"
+            echo "| Canonical repo | `${{ vars.CANONICAL_REPOSITORY || 'unset' }}` |"
+            echo "| Published version | `${{ needs.release.outputs.published_version || 'none' }}` |"
+            echo "| Docker enabled | `${{ vars.PUBLISH_DOCKER_IMAGE || 'unset' }}` |"
+            echo "| Helm enabled | `${{ vars.PUBLISH_HELM_CHART || 'unset' }}` |"
+            echo ""
+            echo "## Gate evaluation"
+            if [ "${{ github.repository }}" = "${{ vars.CANONICAL_REPOSITORY }}" ]; then
+              echo "- 🟢 **Canonical repository**"
+            else
+              echo "- 🔴 **Non-canonical repository** (publishing blocked)"
+            fi
+            if [ "${{ needs.release.outputs.published_version }}" != "" ]; then
+              echo "- 🟢 **Release version present**"
+            else
+              echo "- 🟡 **No release published** (nothing to deliver)"
+            fi
+            echo ""
+            echo "## What happens next?"
+            echo "- 🐳 Docker publishes **only if** `PUBLISH_DOCKER_IMAGE=true`"
+            echo "- ⎈ Helm publishes **only if** `PUBLISH_HELM_CHART=true`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Set up Docker Buildx
+        if: ${{ vars.PUBLISH_DOCKER_IMAGE == 'true' }}
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR (Docker)
+        if: ${{ vars.PUBLISH_DOCKER_IMAGE == 'true' }}
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ github.token }}
+
+      - name: Publish Docker image (gated)
+        if: ${{ vars.PUBLISH_DOCKER_IMAGE == 'true' }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/{{project-name}}:${{ needs.release.outputs.published_version }}
+            ghcr.io/${{ github.repository_owner }}/{{project-name}}:latest
+          labels: |
+            org.opencontainers.image.source=${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ needs.release.outputs.published_version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Set up Helm (chart publish)
+        if: ${{ vars.PUBLISH_HELM_CHART == 'true' }}
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.4
+
+      - name: Log in to GHCR (Helm)
+        if: ${{ vars.PUBLISH_HELM_CHART == 'true' }}
+        run: |
+          echo "${{ github.token }}" | helm registry login ghcr.io \
+            --username "${{ github.repository_owner }}" \
+            --password-stdin
+
+      - name: Publish Helm chart (gated)
+        if: ${{ vars.PUBLISH_HELM_CHART == 'true' }}
+        run: |
+          set -euo pipefail
+          VERSION="${{ needs.release.outputs.published_version }}"
+          helm package helm/app \
+            --version "$VERSION" \
+            --app-version "$VERSION"
+          helm push "{{project-name}}-${VERSION}.tgz" \
+            oci://ghcr.io/${{ github.repository_owner }}/charts
