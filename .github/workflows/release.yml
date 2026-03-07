@@ -196,20 +196,6 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
 
-      - name: Ensure baseline v0.0.0 tag (pre-1.0 versioning)
-        run: |
-          set -euo pipefail
-          if git tag | grep -q .; then
-            echo "Tags exist — skipping baseline creation"
-          else
-            initial_sha="$(git rev-list --max-parents=0 HEAD)"
-            echo "No tags found — creating v0.0.0 at $initial_sha"
-            git tag v0.0.0 "$initial_sha"
-            git push origin v0.0.0
-          fi
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-
       - name: Release gate summary
         run: |
           set -euo pipefail

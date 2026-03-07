@@ -44,6 +44,31 @@ No releasable commits → **no release** (this is expected).
 
 ---
 
+## 🏁 First-time setup (new repository)
+
+Before semantic-release can version correctly, a `v0.0.0` baseline tag must
+exist at the initial commit. Without it, the first release defaults to `v1.0.0`
+regardless of commit type.
+
+**Do this once, before your first push to `main`:**
+
+```bash
+git tag v0.0.0 $(git rev-list --max-parents=0 HEAD)
+git push origin v0.0.0
+```
+
+Then push your branch normally. The `pre-push` hook will warn you if you forget.
+
+After the baseline is in place, versioning works as expected:
+
+| Commit type | Next version |
+| --- | --- |
+| `fix:` | `v0.0.1` |
+| `feat:` | `v0.1.0` |
+| `BREAKING CHANGE:` | `v1.0.0` |
+
+---
+
 ## 🧠 Deep dive — Release system design
 
 ### What happens on release
@@ -312,9 +337,8 @@ After that, versioning works as expected:
 | `feat:` | `v0.1.0` |
 | `BREAKING CHANGE:` | `v1.0.0` |
 
-The release workflow in this template automatically creates this baseline tag
-if none exists. If you are using a fork or a new repository from this template,
-the tag is created on the first release run.
+The `pre-push` hook warns you before pushing to `main` or `canary` if no
+baseline tag exists, with the exact commands to run.
 
 **If v1.0.0 was already created accidentally**, see
 [`UNDO_ACCIDENTAL_RELEASE.md`](./UNDO_ACCIDENTAL_RELEASE.md) for the recovery steps,

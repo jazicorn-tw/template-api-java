@@ -212,6 +212,19 @@ Go to your GitHub repo → **Settings → Secrets and variables → Actions**.
 > The `ci` workflow works without secrets.
 > Only the `release` workflow's release job requires the GitHub App credentials.
 
+### Baseline tag (required for correct versioning)
+
+Create a `v0.0.0` tag at the initial commit before your first push to `main`.
+Without it, semantic-release defaults to `v1.0.0` on the first release regardless
+of commit type.
+
+```bash
+git tag v0.0.0 $(git rev-list --max-parents=0 HEAD)
+git push origin v0.0.0
+```
+
+Do this once. The `pre-push` hook will warn you if you forget.
+
 ---
 
 ## 8. Define your domain
@@ -243,6 +256,7 @@ To adapt it:
 - [ ] `./gradlew test` passes
 - [ ] App starts and `/ping` responds
 - [ ] GitHub secrets and variables configured
+- [ ] Baseline `v0.0.0` tag created and pushed
 - [ ] Domain entities renamed to match your project
 
 ---
