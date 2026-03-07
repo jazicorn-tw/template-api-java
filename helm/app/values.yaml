@@ -4,7 +4,7 @@ nameOverride: ""
 fullnameOverride: ""
 
 image:
-  repository: ghcr.io/your-org/{{project-name}}
+  repository: ghcr.io/jazicorn-tw/template-api-java
   tag: "latest"
   pullPolicy: IfNotPresent
 
@@ -31,7 +31,7 @@ ingress:
   className: ""
   annotations: {}
   hosts:
-    - host: {{project-name}}.local
+    - host: template-api-java.local
       paths:
         - path: /
           pathType: Prefix
