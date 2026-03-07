@@ -18,15 +18,16 @@ Phase 0.2 wires the full delivery pipeline before domain work begins:
 
 ## 🚀 CI/CD Pipelines
 
-Five GitHub Actions workflows live in `.github/workflows/`:
+Six GitHub Actions workflows live in `.github/workflows/`:
 
 | Workflow | Trigger | Purpose |
 | -------- | ------- | ------- |
-| `ci-fast` | push / PR | Compile + unit tests only (fast feedback loop) |
-| `ci-quality` | push / PR | Spotless, Checkstyle, PMD, SonarCloud analysis |
-| `ci-test` | push / PR | Full test suite including Testcontainers integration tests |
-| `release` | push to `main` | semantic-release — bump version, tag, CHANGELOG, GitHub Release |
-| `image-build` | release tag | Build and push Docker image to GHCR |
+| `ci` | push / PR | Compile, tests, Spotless, static analysis, SonarCloud, markdown lint |
+| `release` | push / PR / tag push | Docker build check, Helm lint, semantic-release, Docker + Helm publish |
+| `security` | push / PR / weekly | CodeQL static security analysis |
+| `changelog-guard` | push / PR | Prevent manual edits to `CHANGELOG.md` |
+| `pr-helper` | after CI failure on PR | Post helper comment linking to smoke test checklist |
+| `doctor` | push to `main` / PR | Environment snapshot and validation |
 
 **Gradle caching** is handled by `gradle/actions/setup-gradle@v4`.
 `act` is detected via `github.actor != 'nektos/act'` to skip caching steps when
@@ -49,7 +50,7 @@ Releases are fully automated via **semantic-release** (`.releaserc.cjs`).
 4. `CHANGELOG.md` is updated automatically
 5. A GitHub Release is created with formatted release notes
 6. The commit is tagged (e.g. `v1.3.0`)
-7. The `image-build` workflow is triggered by the new tag
+7. The `release` workflow's `publish` job is triggered by the new tag
 
 **Commit format** is enforced by the `commit-msg` pre-commit hook and commitizen.
 See `docs/tooling/CONVENTIONAL_COMMITS.md`.
@@ -64,7 +65,8 @@ make release-dry-run
 
 ## 🐳 Docker Image Publishing
 
-The `image-build` workflow builds and pushes a Docker image to GHCR on every release tag:
+The `release` workflow's `publish` job builds and pushes a Docker image to GHCR on
+every release tag:
 
 ```text
 ghcr.io/<owner>/{{project-name}}:<version>
@@ -76,8 +78,8 @@ The `Dockerfile` uses a multi-stage build:
 * Stage 1: Gradle build (produces the fat JAR)
 * Stage 2: Minimal JRE runtime image
 
-The workflow is path-filtered to only trigger on meaningful changes
-(`Dockerfile`, `src/`, `build.gradle`, `gradle/`, `helm/`).
+The same `release` workflow also runs a Docker build check (no push) on every
+PR and branch push to catch `Dockerfile` issues before a release tag is created.
 
 ---
 

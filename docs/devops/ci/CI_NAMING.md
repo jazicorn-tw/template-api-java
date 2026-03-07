@@ -13,150 +13,93 @@ If you can understand what a workflow does **without opening the YAML**, the nam
 
 ## Core Principle
 
-> **Workflow names reflect intent, not tools.**
+> **Workflow names reflect purpose, not tools.**
 
 Names should answer one question immediately:
 
-> *Does this workflow validate code, or does it produce / publish artifacts?*
+> *What is the primary responsibility of this workflow?*
 
 ---
 
-## Category 1: `ci-*` — Validation Only
+## Current Workflow Inventory
 
-### Definition
-
-Workflows prefixed with `ci-`:
-
-* Validate correctness, quality, or standards
-* Are safe to run frequently (PRs, pushes)
-* **Never publish or deploy artifacts**
-
-These workflows answer:
-
-> "Is this change acceptable?"
-
-### Examples
-
-* `ci-fast` — quick PR feedback (compile + lightweight tests)
-* `ci-quality` — formatting, linting, static analysis
-* `ci-test` — full test suite (including integration / Testcontainers)
-
-### Rules
-
-* ✅ May fail safely
-* ✅ May run on forks
-* ❌ Must not push images, releases, or deployments
-* ❌ Must not mutate external systems
+| File | Name | Purpose |
+| --- | --- | --- |
+| `ci.yml` | `CI` | Validate correctness — tests, quality, lint |
+| `release.yml` | `Release` | Release lifecycle — Docker build, Helm lint, semantic-release, publish |
+| `security.yml` | `Security` | CodeQL static security analysis |
+| `changelog-guard.yml` | `Changelog Guard` | Prevent manual edits to `CHANGELOG.md` |
+| `pr-helper.yml` | `PR Helper` | Post diagnostic comment on CI failure |
+| `doctor.yml` | `Doctor` | Environment snapshot and validation |
 
 ---
 
-## Category 2: `image-*` — Artifact Lifecycle (Docker Images)
+## Naming Rules
 
-### Definition
+### Validation workflows
 
-Workflows prefixed with `image-`:
+Workflows whose primary job is validating correctness use short,
+descriptive names without prefixes:
 
-* Build or distribute container images
-* Are gated by branch, tags, or feature flags
-* Operate on **real artifacts**
+- `ci.yml` — the primary CI workflow (tests, formatting, static analysis)
+- `security.yml` — security-focused static analysis
+- `doctor.yml` — environment health check
 
-These workflows answer:
+These workflows:
 
-> "What happens to the container image?"
+- ✅ May run on every PR and branch push
+- ✅ May fail safely without side effects
+- ❌ Must not push images, cut releases, or mutate external systems
 
-### Examples
+### Release lifecycle workflow
 
-* `image-build` — build image only (no push)
-* `image-publish` — build + push image to registry
+The `release.yml` workflow owns the full release lifecycle:
 
-### Rules
+- Docker image build (validation, no push) — `docker-build` job
+- Helm chart lint — `helm-lint` job
+- Semantic-release (version bump, changelog, tag) — `release` job
+- Docker + Helm publish to GHCR — `publish` job
 
-* ❌ Must not run on every PR by default
-* ✅ Must be explicitly gated (tags, vars, canonical repo checks)
-* ✅ Naming should reflect lifecycle stage (`build`, `publish`, `scan`, `sign`)
+Consolidating these into one file makes the trigger and permission model
+explicit: each job declares only the permissions it needs.
 
----
+### Guard / utility workflows
 
-## Category 3: `release-*` — Versioning & Source Releases
+Short noun-phrase names that describe what they protect or provide:
 
-### Definition
-
-Workflows prefixed with `release-`:
-
-* Create versioned releases
-* Tag source code
-* Generate changelogs
-
-These workflows answer:
-
-> "Are we cutting a new version?"
-
-### Examples
-
-* `release` or `release-semantic`
-* `release-notes`
-
-### Rules
-
-* 🚨 Must be tightly gated (protected branches, semantic-release, GitHub App)
-* 🚨 Must be auditable and deterministic
-* ❌ Must not be confused with CI validation
+- `changelog-guard.yml` — guards `CHANGELOG.md` from manual edits
+- `pr-helper.yml` — posts helper comments on PR CI failures
 
 ---
 
-## Category 4: `deploy-*` — Environment Mutation
-
-### Definition
-
-Workflows prefixed with `deploy-`:
-
-* Change a running environment
-* Apply Helm charts, infra, or runtime config
-
-These workflows answer:
-
-> "Where is this code running now?"
-
-### Examples
-
-* `deploy-staging`
-* `deploy-production`
-
-### Rules
-
-* 🚨 Must never run on PRs
-* 🚨 Must be environment-specific
-* 🚨 Must be reversible and observable
-
----
-
-## Why This Matters
-
-Clear naming provides:
-
-* 🔍 Instant understanding in the GitHub Actions UI
-* 🛡️ Safer defaults (validation ≠ publishing)
-* 🧠 Lower cognitive load for new contributors
-* 📈 Scalability as workflows grow
-
-Bad naming leads to:
-
-* Accidental publishing
-* Confusing failures
-* Fragile pipeline logic
-
----
-
-## Final Checklist (Before Adding a Workflow)
+## Rules for New Workflows
 
 Ask yourself:
 
-1. Does this **validate** code? → `ci-*`
-2. Does this **create or publish artifacts**? → `image-*`
-3. Does this **cut a version**? → `release-*`
-4. Does this **change a live environment**? → `deploy-*`
+1. **Validate code or environment?** → short noun or adjective (`ci`, `security`, `doctor`)
+2. **Release or publish artifacts?** → add a job to `release.yml` if it belongs to the
+   release lifecycle; otherwise a new purpose-named file
+3. **Protect a resource or pattern?** → `*-guard.yml`
+4. **Assist developers with information?** → `*-helper.yml`
+5. **Deploy to a live environment?** → `deploy-<environment>.yml` (future pattern)
 
-If the name doesn’t answer that question clearly, rename it.
+If the name doesn't answer the question clearly, rename it.
+
+---
+
+## Why Flat Semantic Names
+
+The previous `ci-fast` / `ci-quality` / `ci-test` / `image-build` / `image-publish`
+naming used prefixes to group related workflows. This was replaced because:
+
+- Three separate CI workflows (`ci-fast`, `ci-quality`, `ci-test`) ran overlapping
+  `./gradlew test` steps — wasting runner capacity on every PR
+- `image-build` and `image-publish` as separate files created duplicate Docker publish
+  runs on every semantic-release tag
+- The `ci-failure-comment` workflow watched for a workflow named `"CI"` — no workflow
+  had that name, so PR helper comments never fired
+
+A single `ci.yml` named `"CI"` eliminates all three problems.
 
 ---
 

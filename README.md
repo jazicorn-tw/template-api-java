@@ -1,7 +1,7 @@
 <!-- markdownlint-disable MD033 -->
 
 <h1 align="center">
-  {{project-name}}
+  template-api-java
 </h1>
 
 <p align="center">
@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/spring--boot-4.x-brightgreen" alt="Spring Boot 4">
   <img src="https://img.shields.io/badge/database-postgresql-blue" alt="PostgreSQL">
   <!-- markdownlint-disable-next-line MD013 -->
-  <!--<a href="https://github.com/your-org/{{project-name}}/actions/workflows/ci-test.yml"><img src="https://github.com/your-org/{{project-name}}/actions/workflows/ci-test.yml/badge.svg" alt="CI"></a>-->
+  <a href="https://github.com/jazicorn-tw/template-api-java/actions/workflows/ci.yml"><img src="https://github.com/jazicorn-tw/template-api-java/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
 </p>
 
 ---
@@ -29,7 +29,7 @@
 
 ## 🚀 At a glance
 
-**{{project-name}}** is a Spring Boot 4 backend API scaffold that demonstrates:
+**template-api-java** is a Spring Boot 4 backend API scaffold that demonstrates:
 
 - Doctor-first local setup validation
 - CI-aligned quality gates from day one
@@ -113,14 +113,14 @@ Quick-start examples: [`docs/onboarding/QUICK_START.md`](docs/onboarding/QUICK_S
 
 ## 🗺️ Roadmap (high level)
 
-| Phase | Focus                                |
-|------:|--------------------------------------|
-| 0     | Project skeleton & DX infrastructure |
-| 1     | Core CRUD domain                     |
-| 2     | External API integration             |
-| 3     | Domain feature 3 *(define yours)*    |
-| 4     | Domain feature 4 *(define yours)*    |
-| 5     | Security & hardening                 |
+| Phase | Focus |
+| ---: | --- |
+| 0 | Project skeleton & DX infrastructure |
+| 1 | Core CRUD domain |
+| 2 | External API integration |
+| 3 | Domain feature 3 *(define yours)* |
+| 4 | Domain feature 4 *(define yours)* |
+| 5 | Security & hardening |
 
 ---
 

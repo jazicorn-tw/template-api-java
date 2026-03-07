@@ -23,8 +23,8 @@ comments on changed lines.
 
 ## When it runs
 
-SonarCloud analysis is part of the `CI Quality` workflow
-(`.github/workflows/ci-quality.yml`). It is gated by two conditions:
+SonarCloud analysis is part of the `CI` workflow
+(`.github/workflows/ci.yml`), in the `test` job. It is gated by two conditions:
 
 ```yaml
 if: ${{ vars.ENABLE_SONAR != 'false' && github.actor != 'nektos/act' }}
@@ -43,15 +43,17 @@ does not block the build.
 
 ## What runs before analysis
 
-The Sonar step runs `test`, `jacocoTestReport`, and `sonar` together:
+The Sonar step runs after `./gradlew test` completes in the same `test` job,
+then produces and uploads the coverage report:
 
 ```bash
-./gradlew test jacocoTestReport sonar --no-daemon --no-configuration-cache --info
+./gradlew jacocoTestReport sonar --no-daemon --no-configuration-cache --info
 ```
 
-This ensures coverage data is fresh before the report is uploaded. JaCoCo
-generates `build/reports/jacoco/test/jacocoTestReport.xml`, which the Sonar
-Gradle plugin reads automatically.
+Running Sonar in the `test` job (rather than a separate quality job) avoids
+re-running the full test suite a second time. JaCoCo generates
+`build/reports/jacoco/test/jacocoTestReport.xml`, which the Sonar Gradle
+plugin reads automatically.
 
 ---
 
@@ -90,7 +92,7 @@ The token is generated under **My Account → Security** in SonarCloud.
 
 ### 4. Verify
 
-Push a branch and open a PR. The `CI Quality` workflow runs SonarCloud
+Push a branch and open a PR. The `CI` workflow's `test` job runs SonarCloud
 analysis and posts a quality gate result on the PR.
 
 ---
@@ -102,7 +104,7 @@ When a PR is open, SonarCloud posts:
 - A quality gate badge (pass/fail) in the PR checks
 - Inline comments on changed lines that introduce new issues
 
-The `CI Quality` workflow requests `pull-requests: write` permission for this
+The `CI` workflow requests `pull-requests: write` permission for this
 reason.
 
 ---

@@ -9,72 +9,78 @@ runs, what it checks, and what can skip or gate it.
 
 | Workflow file | Name | Trigger |
 | ------------- | ---- | ------- |
-| `ci-fast.yml` | CI Fast | All PRs, manual |
-| `ci-quality.yml` | CI Quality | All PRs, push to `main`/`staging`/`dev`, manual |
-| `ci-test.yml` | CI Test | All PRs, push to `main`/`staging`/`dev`, manual |
-| `codeql.yml` | CodeQL | All PRs, push to `main`/`staging`/`dev`, weekly schedule, manual |
-| `image-build.yml` | Build Image | PRs and push to `main`/`staging`/`dev`/`canary` (path-filtered) |
-| `release.yml` | Release | Push to `main`/`canary` (gated), manual |
-| `ci-guard-release-artifacts.yml` | CI Guard Release Artifacts | All PRs and pushes |
-| `doctor-snapshot.yml` | Doctor | All PRs, push to `main`, manual |
-| `ci-failure-comment.yml` | CI Failure Helper Comment | After CI run completes with failure |
+| `ci.yml` | CI | All PRs, push to `main`/`staging`/`dev`, manual |
+| `release.yml` | Release | All PRs and pushes to `main`/`staging`/`dev`/`canary`, tag push, manual |
+| `security.yml` | Security | All PRs, push to `main`/`staging`/`dev`, weekly schedule, manual |
+| `changelog-guard.yml` | Changelog Guard | All PRs and pushes |
+| `pr-helper.yml` | PR Helper | After CI run completes with failure |
+| `doctor.yml` | Doctor | All PRs, push to `main`, manual |
 
 ---
 
-## ci-fast — Compile + unit tests
-
-**Triggers:** all PRs, `workflow_dispatch`
-
-The fastest feedback loop. Two jobs:
-
-1. **`fast`** — compiles the project and runs all tests (including
-   Testcontainers integration tests) on every PR. No static analysis, no
-   SonarCloud, no Docker image build.
-
-2. **`planning-lint`** — runs after `fast`; lints `IDEAS.md`, `TODO.md`, and
-   `PROMOTION_CHECKLIST.md` using `scripts/planning/planning-lint.sh`.
-
-This workflow is intentionally lean. It must pass on every PR before merge.
-
----
-
-## ci-quality — Static analysis + SonarCloud
+## ci.yml — CI
 
 **Triggers:** all PRs, push to `main`/`staging`/`dev`, `workflow_dispatch`
 
-Two parallel jobs:
+Four parallel / sequenced jobs:
 
-1. **`quality`** — runs in order:
-   - `spotlessCheck` — formatting (fails fast if files are not formatted)
-   - `checkstyleMain`, `checkstyleTest`, `pmdMain`, `pmdTest`,
-     `spotbugsMain`, `spotbugsTest` — gated by `ENABLE_STATIC_ANALYSIS != 'false'`
-   - SonarCloud analysis — gated by `ENABLE_SONAR != 'false'` and
-     requires `SONAR_TOKEN`; skipped under `act`
+1. **`test`** — compile + `./gradlew test` with Testcontainers (requires Docker).
+   - Docker sanity check (`docker version` / `docker info`)
+   - Full `act` + Testcontainers compatibility env vars
+   - SonarCloud: `./gradlew jacocoTestReport sonar` — gated by
+     `ENABLE_SONAR != 'false'`; requires `SONAR_TOKEN`; skipped under `act`
+   - Uploads test report artifact on failure
 
-2. **`markdown-lint`** — runs `markdownlint-cli2` against all `*.md` files in
-   the repo; gated by `ENABLE_MD_LINT != 'false'`
+2. **`quality`** — Spotless + static analysis (no Docker, no Sonar, runs in
+   parallel with `test` for fast feedback)
+   - `spotlessCheck`
+   - `checkstyleMain/Test`, `pmdMain/Test`, `spotbugsMain/Test` — gated by
+     `ENABLE_STATIC_ANALYSIS != 'false'`
 
-No Docker required. Runs without Testcontainers.
+3. **`markdown-lint`** — runs `markdownlint-cli2 '**/*.md'` independently;
+   gated by `ENABLE_MD_LINT != 'false'`
 
----
+4. **`planning-lint`** — needs `test`; lints `IDEAS.md`, `TODO.md`, and
+   `PROMOTION_CHECKLIST.md` using `scripts/planning/planning-lint.sh`
 
-## ci-test — Integration tests
-
-**Triggers:** all PRs, push to `main`/`staging`/`dev`, `workflow_dispatch`
-
-Single job:
-
-- Starts Docker (GitHub-hosted runners have Docker pre-installed)
-- Runs `./gradlew test` — includes Testcontainers integration tests
-- Uploads test reports as a build artifact on failure
-
-This is the authoritative test run for branches. `ci-fast` also runs tests,
-but `ci-test` is the dedicated job with Docker availability confirmed and
-failure artifacts uploaded.
+Named `"CI"` so that `pr-helper.yml` (`workflow_run: workflows: ["CI"]`)
+correctly receives failure events and posts helper comments on PRs.
 
 ---
 
-## codeql — Security analysis
+## release.yml — Release
+
+**Triggers:** PRs targeting `main`/`staging`/`dev`/`canary`, push to those
+branches, tag push `v*.*.*`, `workflow_dispatch`
+
+Four jobs, each with its own `if:` condition and minimal `permissions:`:
+
+1. **`docker-build`** — Docker build check, no push; runs on PRs and branch
+   pushes (skipped on tag push). Permissions: `contents: read`
+
+2. **`helm-lint`** — `helm lint helm/app`; same trigger as `docker-build`.
+   Permissions: `contents: read`
+
+3. **`release`** — semantic-release; runs only on push to `main`/`canary` or
+   manual dispatch, gated by `ENABLE_SEMANTIC_RELEASE=true`. Permissions:
+   `contents: write`, `issues: write`, `pull-requests: write`, `packages: write`
+   - GitHub App token via `tibdex/github-app-token`
+   - Dry-run preview → publish (dry-run only under `act`)
+   - Writes job summary with gate values and outcome
+
+4. **`publish`** — Docker + Helm push to GHCR; runs on tag push OR after
+   `release` produces a version; gated by `CANONICAL_REPOSITORY` match +
+   individual `PUBLISH_DOCKER_IMAGE` / `PUBLISH_HELM_CHART` flags.
+   Permissions: `contents: read`, `packages: write`
+   - Tag strategy: stable `v1.2.3` → `1.2.3`, `1.2`, `1`, `latest`;
+     canary `v1.2.3-canary.1` → `1.2.3-canary.1`, `canary`
+
+See [`WHY_NO_RELEASE.md`](./WHY_NO_RELEASE.md) for the full release diagnosis
+guide.
+
+---
+
+## security.yml — Security
 
 **Triggers:** all PRs, push to `main`/`staging`/`dev`, weekly schedule (Monday
 03:00 UTC), `workflow_dispatch`
@@ -88,15 +94,8 @@ Single job:
 - Builds the project via CodeQL autobuild (no Docker required)
 - Uploads results as SARIF to the **Security → Code scanning** tab
 
-On PRs, CodeQL posts inline annotations on changed lines where issues are found
-— similar to SonarCloud PR decoration but native to GitHub with no external
-service required.
-
+On PRs, CodeQL posts inline annotations on changed lines where issues are found.
 The weekly schedule catches new vulnerability rules published between pushes.
-
-**To enable:** no variables need to be set — CodeQL runs by default. Requires
-`security-events: write` permission, which is already declared in the workflow.
-For private repositories, GitHub Advanced Security must be enabled on the repo.
 
 **To disable:**
 
@@ -106,53 +105,7 @@ Settings → Variables → Actions → ENABLE_CODEQL = false
 
 ---
 
-## image-build — Docker image and Helm lint
-
-**Triggers:** PRs targeting `main`/`staging`/`dev`/`canary`, push to those
-branches; path-filtered to `Dockerfile`, `src/**`, `build.gradle`,
-`settings.gradle`, `gradle/**`, `helm/**`
-
-Two parallel jobs:
-
-1. **`build`** — builds the Docker image (`push: false`) to verify the
-   `Dockerfile` compiles correctly. No image is pushed.
-
-2. **`helm-lint`** — runs `helm lint helm/app` to validate the Helm chart
-   template.
-
-Changes to documentation, scripts, or workflow files do not trigger this
-workflow.
-
----
-
-## release — Semantic-release + artifact publishing
-
-**Triggers:** push to `main` or `canary`; `workflow_dispatch` with
-`enable_release=true`
-
-**Gated:** requires `ENABLE_SEMANTIC_RELEASE=true` (repo variable) or manual
-input.
-
-Two jobs:
-
-1. **`release`** — runs semantic-release:
-   - Dry-runs first to preview the next version
-   - Under `act`: always dry-run only (no publish)
-   - On GitHub: publishes if releasable commits exist (`feat:`, `fix:`,
-     `perf:`)
-   - Writes a job summary with gate values and outcome
-
-2. **`publish`** — runs after `release`, only in the canonical repository and
-   only when a version was published:
-   - Docker image → GHCR, gated by `PUBLISH_DOCKER_IMAGE=true`
-   - Helm chart → GHCR OCI, gated by `PUBLISH_HELM_CHART=true`
-
-See [`WHY_NO_RELEASE.md`](./WHY_NO_RELEASE.md) for the full release diagnosis
-guide.
-
----
-
-## ci-guard-release-artifacts — CHANGELOG protection
+## changelog-guard.yml — Changelog Guard
 
 **Triggers:** all PRs and all pushes (no branch filter)
 
@@ -167,7 +120,20 @@ Can be disabled via `GUARD_RELEASE_ARTIFACTS=false` (repo variable).
 
 ---
 
-## doctor-snapshot — Environment validation
+## pr-helper.yml — PR Helper
+
+**Triggers:** after a workflow named `"CI"` completes with a non-success result
+on a pull request
+
+Posts (or updates) a single comment on the PR linking to the First PR Smoke
+Test checklist. Uses an idempotent marker so the comment is updated in place
+rather than duplicated on every failure.
+
+This workflow does not run any tests. It only writes a comment.
+
+---
+
+## doctor.yml — Doctor
 
 **Triggers:** all PRs, push to `main`, `workflow_dispatch`
 
@@ -183,19 +149,6 @@ Can be disabled via `ENABLE_DOCTOR_SNAPSHOT=false` (repo variable).
 
 ---
 
-## ci-failure-comment — PR helper comment
-
-**Triggers:** after a workflow named `CI` completes with a non-success result
-on a pull request
-
-Posts (or updates) a single comment on the PR linking to the First PR Smoke
-Test checklist. Uses an idempotent marker so the comment is updated in place
-rather than duplicated on every failure.
-
-This workflow does not run any tests. It only writes a comment.
-
----
-
 ## Feature flags summary
 
 Most workflows respect repository variables that let you disable expensive or
@@ -205,15 +158,15 @@ for the complete list.
 
 | Variable | Default | Controls |
 | -------- | ------- | -------- |
-| `ENABLE_CODEQL` | on | CodeQL analysis job in `codeql` |
-| `ENABLE_STATIC_ANALYSIS` | on | Checkstyle/PMD/SpotBugs in `ci-quality` |
-| `ENABLE_SONAR` | on | SonarCloud analysis in `ci-quality` |
-| `ENABLE_MD_LINT` | on | markdownlint job in `ci-quality` |
+| `ENABLE_CODEQL` | on | CodeQL analysis job in `security` |
+| `ENABLE_STATIC_ANALYSIS` | on | Checkstyle/PMD/SpotBugs in `ci` |
+| `ENABLE_SONAR` | on | SonarCloud analysis in `ci` |
+| `ENABLE_MD_LINT` | on | markdownlint job in `ci` |
 | `ENABLE_SEMANTIC_RELEASE` | off | Release job in `release` |
 | `PUBLISH_DOCKER_IMAGE` | off | Docker publish in `release` |
 | `PUBLISH_HELM_CHART` | off | Helm publish in `release` |
-| `GUARD_RELEASE_ARTIFACTS` | on | CHANGELOG guard in `ci-guard-release-artifacts` |
-| `ENABLE_DOCTOR_SNAPSHOT` | on | `doctor-snapshot` workflow |
+| `GUARD_RELEASE_ARTIFACTS` | on | CHANGELOG guard in `changelog-guard` |
+| `ENABLE_DOCTOR_SNAPSHOT` | on | `doctor` workflow |
 
 ---
 

@@ -25,7 +25,7 @@ It reflects **intent and design direction**, not a record of released changes.
 
 - Initial Spring Boot 4 project setup
 - `/ping` endpoint and context bootstrap test (containerized PostgreSQL)
-- CI/CD pipelines: `ci-fast`, `ci-quality`, `ci-test`, `release`, `image-build`
+- CI/CD pipelines: `ci`, `release`, `security`, `changelog-guard`, `pr-helper`, `doctor`
 - Semantic-release with Conventional Commits
 - Docker image publishing to GHCR; Helm chart for Kubernetes
 - Modular Make system (`make/`) with role-based targets

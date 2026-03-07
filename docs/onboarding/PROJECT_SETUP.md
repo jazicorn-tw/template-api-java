@@ -198,8 +198,8 @@ Go to your GitHub repo → **Settings → Secrets and variables → Actions**.
 | `ENABLE_SEMANTIC_RELEASE` | `true` |
 | `CANONICAL_REPOSITORY` | `acme/my-api` |
 
-> The CI pipelines `ci-fast`, `ci-quality`, and `ci-test` work without secrets.
-> Only the `release` and `image-publish` workflows require the GitHub App credentials.
+> The `ci` workflow works without secrets.
+> Only the `release` workflow's release job requires the GitHub App credentials.
 
 ---
 

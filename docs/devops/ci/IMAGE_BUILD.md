@@ -1,39 +1,39 @@
 <!-- markdownlint-disable-file MD033 -->
 <!-- markdownlint-disable MD024 -->
 
-# 🏗️ Build Docker Image (CI – No Push)
+# 🏗️ Docker Build Check (CI – No Push)
 
-This workflow builds the Docker image **for validation only**.  
-It is designed to catch Dockerfile, dependency, and Helm issues early — **without publishing anything**.
+The `docker-build` job in the `release.yml` workflow builds the Docker image
+**for validation only**. It is designed to catch Dockerfile, dependency, and
+Helm issues early — **without publishing anything**.
 
-Workflow file: `.github/workflows/image-build.yml`
+Workflow file: `.github/workflows/release.yml` (job: `docker-build`)
 
 ---
 
-## ✅ When this workflow runs
+## ✅ When this job runs
 
-The **Build Image** workflow runs on:
+The **docker-build** job runs on:
 
-- Pull requests targeting `main`, `staging`, or `dev`
-- Direct pushes to `main`, `staging`, or `dev`
+- Pull requests targeting `main`, `staging`, `dev`, or `canary`
+- Direct pushes to `main`, `staging`, `dev`, or `canary`
 - Manual trigger via **workflow_dispatch**
 
 ```yaml
-on:
-  pull_request:
-    branches: [ main, staging, dev ]
-  push:
-    branches: [ main, staging, dev ]
-  workflow_dispatch:
+if: ${{ !startsWith(github.ref, 'refs/tags/') }}
 ```
 
-This ensures Docker and Helm issues are detected **before** release tags are created.
+The job is skipped on tag pushes — those are handled by the `publish` job
+once semantic-release creates a release.
+
+This ensures Docker and Helm issues are detected **before** release tags
+are created.
 
 ---
 
 ## 🔐 Permissions
 
-This workflow is read-only:
+This job is read-only:
 
 ```yaml
 permissions:
@@ -41,21 +41,6 @@ permissions:
 ```
 
 It does **not** authenticate to any container registry and **never pushes images**.
-
----
-
-## 🧵 Concurrency
-
-To avoid redundant builds on rapid pushes or PR updates:
-
-```yaml
-concurrency:
-  group: image-build-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-```
-
-- One build per branch/PR at a time
-- Older in-progress builds are cancelled when a new commit arrives
 
 ---
 
@@ -101,7 +86,8 @@ Key points:
 
 ### Purpose
 
-The Helm lint job validates Kubernetes manifests **without deploying anything**.
+The `helm-lint` job (parallel to `docker-build`) validates Kubernetes manifests
+**without deploying anything**.
 
 It checks:
 
@@ -126,25 +112,27 @@ Helm version is pinned for reproducibility:
 
 ---
 
-## 🧪 What this workflow does *not* do
+## 🧪 What this job does *not* do
 
-This workflow intentionally does **not**:
+This job intentionally does **not**:
 
 - Push Docker images
 - Require registry credentials
 - Publish Helm charts
 - Deploy to Kubernetes
 
-Publishing is handled separately by the **Publish Image** workflow, which runs **only on release tags**.
+Publishing is handled by the **`publish` job** in the same `release.yml` workflow,
+which runs **only on release tags or after semantic-release produces a version**.
 
 ---
 
-## 🔁 Relationship to other workflows
+## 🔁 Relationship to other jobs in `release.yml`
 
-| Workflow          | Responsibility                                  |
-|-------------------|-------------------------------------------------|
-| **Build Image**   | CI validation (Docker + Helm), no side effects  |
-| **Publish Image** | Release-only image publishing to GHCR           |
-| **CI / Quality**  | Tests, linting, static analysis                 |
+| Job | Responsibility |
+| --- | --- |
+| **`docker-build`** | CI validation (Docker build), no push |
+| **`helm-lint`** | CI validation (Helm chart), no deploy |
+| **`release`** | semantic-release — version bump and tag |
+| **`publish`** | Build + push Docker image and Helm chart to GHCR |
 
 This separation keeps CI **fast, safe, and predictable**.

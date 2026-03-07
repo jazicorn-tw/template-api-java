@@ -1,4 +1,4 @@
-name: CI Guard Release Artifacts
+name: Changelog Guard
 
 on:
   pull_request:

@@ -1,4 +1,4 @@
-name: Doctor (environment snapshot)
+name: Doctor
 
 on:
   workflow_dispatch:

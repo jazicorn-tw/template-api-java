@@ -148,9 +148,8 @@ make check-all
 `act` lets you run GitHub Actions workflows locally before pushing:
 
 ```bash
-make act-fast       # run ci-fast locally
-make act-quality    # run ci-quality locally
-make act-test       # run ci-test locally
+make act-ci         # run ci locally
+make act-release    # run release locally (dry-run)
 ```
 
 Requires:

@@ -1,4 +1,4 @@
-name: CI Failure Helper Comment
+name: PR Helper
 
 on:
   workflow_run:

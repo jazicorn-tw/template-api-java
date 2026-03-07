@@ -104,8 +104,8 @@ Badges are treated as **signals**, not decoration.
 ### Continuous Integration (CI)
 
 ```html
-<a href="https://github.com/your-org/{{project-name}}/actions/workflows/ci-test.yml">
-  <img src="https://github.com/your-org/{{project-name}}/actions/workflows/ci-test.yml/badge.svg" alt="CI">
+<a href="https://github.com/your-org/{{project-name}}/actions/workflows/ci.yml">
+  <img src="https://github.com/your-org/{{project-name}}/actions/workflows/ci.yml/badge.svg" alt="CI">
 </a>
 ```
 
@@ -121,7 +121,7 @@ Badges are treated as **signals**, not decoration.
 
 **Source**
 
-- GitHub Actions workflow: `ci-test.yml`
+- GitHub Actions workflow: `ci.yml`
 
 ---
 
@@ -136,8 +136,8 @@ They may be added later once their signals are externally meaningful.
 ### Docker Image Build
 
 ```html
-<a href="https://github.com/your-org/{{project-name}}/actions/workflows/image-build.yml">
-  <img src="https://github.com/your-org/{{project-name}}/actions/workflows/image-build.yml/badge.svg" alt="Build Image">
+<a href="https://github.com/your-org/{{project-name}}/actions/workflows/release.yml">
+  <img src="https://github.com/your-org/{{project-name}}/actions/workflows/release.yml/badge.svg" alt="Release">
 </a>
 ```
 
@@ -157,15 +157,15 @@ They may be added later once their signals are externally meaningful.
 
 **Source**
 
-- GitHub Actions workflow: `image-build.yml`
+- GitHub Actions workflow: `release.yml` (`docker-build` job)
 
 ---
 
 ### Docker Image Publish (Deferred)
 
 ```html
-<a href="https://github.com/your-org/{{project-name}}/actions/workflows/image-publish.yml">
-  <img src="https://github.com/your-org/{{project-name}}/actions/workflows/image-publish.yml/badge.svg" alt="Publish Image">
+<a href="https://github.com/your-org/{{project-name}}/actions/workflows/release.yml">
+  <img src="https://github.com/your-org/{{project-name}}/actions/workflows/release.yml/badge.svg" alt="Release">
 </a>
 ```
 
@@ -185,7 +185,7 @@ They may be added later once their signals are externally meaningful.
 
 **Source**
 
-- GitHub Actions workflow: `image-publish.yml`
+- GitHub Actions workflow: `release.yml` (`publish` job)
 
 ---
 
