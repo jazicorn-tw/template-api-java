@@ -56,18 +56,24 @@ To simulate them locally, you must provide a `.vars` file.
 
 ## 2️⃣ Artifact publishing gate
 
-Publishing (Docker image, Helm chart, etc.) is further gated by:
+Publishing (Docker image, Helm chart) is handled by **`publish.yml`**, a
+separate workflow triggered directly by tag push (`v*.*.*`). It is gated by:
 
 ```yaml
 github.repository == vars.CANONICAL_REPOSITORY
 AND
-needs.release.outputs.published_version != ''
+vars.PUBLISH_DOCKER_IMAGE == 'true'   # (Docker job)
+vars.PUBLISH_HELM_CHART  == 'true'   # (Helm job)
 ```
 
 This ensures:
 
 - Forks can never publish artifacts
-- Nothing publishes if no version was released
+- Publishing only happens on a real `vX.Y.Z` tag push
+
+> `publish.yml` is kept separate from `release.yml` to avoid a GitHub Actions
+> limitation where a job with `needs: [release]` is skipped when `release` is
+> skipped (which it is on tag pushes), even when `always()` is used.
 
 ---
 
@@ -141,6 +147,7 @@ See `docs/environment/ci/CI_FEATURE_FLAGS.md` for full details.
 - `docs/environment/ci/CI_FEATURE_FLAGS.md`
 - `docs/adr/ADR-008-ci-managed-releases.md`
 - `.github/workflows/release.yml`
+- `.github/workflows/publish.yml`
 
 ---
 

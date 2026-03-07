@@ -190,15 +190,15 @@ This prevents accidental releases from routine merges.
 
 ## 📦 Artifact publishing gates
 
-Docker / Helm publishing requires **all** of:
+Docker and Helm publishing is handled by **`publish.yml`**, which triggers
+independently on tag push (`v*.*.*`). It requires **all** of:
 
-1. A published version (`vX.Y.Z`)
-2. Running in the canonical repository
-3. The corresponding feature flag enabled
+1. A tag matching `v*.*.*` pushed to the canonical repository
+2. The corresponding feature flag enabled
 
 ```text
-PUBLISH_DOCKER_IMAGE=true
-PUBLISH_HELM_CHART=true
+PUBLISH_DOCKER_IMAGE=true   # Docker image → ghcr.io/<owner>/<repo>
+PUBLISH_HELM_CHART=true     # Helm chart  → ghcr.io/<owner>/charts
 ```
 
 Forks can run CI safely but **cannot publish artifacts**.

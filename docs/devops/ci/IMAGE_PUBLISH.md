@@ -3,26 +3,26 @@
 # 🐳 Publish Docker Image (Release Tags Only)
 
 This repository publishes a Docker image to **GitHub Container Registry (GHCR)** only when
-a **semantic-release tag** is pushed (example: `v1.2.3`), or when the `release` job in the
-same workflow produces a new version.
+a **semantic-release tag** is pushed (example: `v1.2.3`).
 
-Workflow file: `.github/workflows/release.yml` (job: `publish`)
+Workflow file: `.github/workflows/publish.yml` (job: `docker`)
 
 ---
 
 ## ✅ When this job runs
 
-The **publish** job triggers when either:
-
-- A Git tag matching `v*.*.*` is pushed directly, **or**
-- The `release` job completes and produces a new version (`published_version` output is set)
+The **docker** job triggers when a Git tag matching `v*.*.*` is pushed:
 
 ```yaml
-needs: [release]
-if: |
-  always() &&
-  vars.CANONICAL_REPOSITORY == github.repository &&
-  (startsWith(github.ref, 'refs/tags/') || needs.release.outputs.published_version != '')
+on:
+  push:
+    tags: [ 'v*.*.*' ]
+```
+
+```yaml
+if: >-
+  github.repository == vars.CANONICAL_REPOSITORY &&
+  vars.PUBLISH_DOCKER_IMAGE == 'true'
 ```
 
 That means:
@@ -141,7 +141,7 @@ with:
 
 After semantic-release publishes a tag (e.g., `v1.2.3`), confirm:
 
-1. GitHub Actions shows a successful run for **Release** (the `publish` job)
+1. GitHub Actions shows a successful run for **Publish** (the `docker` job)
 2. GHCR has the new package + tags
 
 You can also pull locally:
@@ -162,7 +162,6 @@ Most common causes:
 - `PUBLISH_DOCKER_IMAGE` is missing or not `"true"`
 - `CANONICAL_REPOSITORY` is missing or doesn't match `${{ github.repository }}`
 - The tag didn't match `v*.*.*`
-- The `release` job was skipped (check `ENABLE_SEMANTIC_RELEASE`)
 
 See [`docs/faq/ci/WHY_NO_RELEASE.md`](../../faq/ci/WHY_NO_RELEASE.md) for the full
 release diagnosis guide.
@@ -183,11 +182,12 @@ malicious publishing from a fork where variables might differ.
 
 ---
 
-## 🔁 Relationship to other jobs in `release.yml`
+## 🔁 Relationship to other workflows
 
-| Job | Responsibility |
+| Workflow / Job | Responsibility |
 | --- | --- |
-| **`docker-build`** | CI validation (Docker build), no push |
-| **`helm-lint`** | CI validation (Helm chart), no deploy |
-| **`release`** | semantic-release — version bump and tag |
-| **`publish`** | Build + push Docker image and Helm chart to GHCR |
+| `release.yml` / **`docker-build`** | CI validation (Docker build), no push |
+| `release.yml` / **`helm-lint`** | CI validation (Helm chart), no deploy |
+| `release.yml` / **`release`** | semantic-release — version bump and tag |
+| `publish.yml` / **`docker`** | Build + push Docker image to GHCR |
+| `publish.yml` / **`helm`** | Package + push Helm chart to GHCR |

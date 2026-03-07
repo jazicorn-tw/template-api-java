@@ -11,6 +11,7 @@ runs, what it checks, and what can skip or gate it.
 | --- | --- | --- |
 | `ci.yml` | CI | All PRs, push to `main`/`staging`, manual |
 | `release.yml` | Release | All PRs and pushes to `main`/`staging`/`canary`, tag push, manual |
+| `publish.yml` | Publish | Tag push `v*.*.*` |
 | `security.yml` | Security | All PRs, push to `main`/`staging`, weekly schedule, manual |
 | `changelog-guard.yml` | Changelog Guard | All PRs and pushes |
 | `pr-helper.yml` | PR Helper | After CI run completes with failure |
@@ -53,7 +54,7 @@ correctly receives failure events and posts helper comments on PRs.
 **Triggers:** PRs targeting `main`/`staging`/`canary`, push to those
 branches, tag push `v*.*.*`, `workflow_dispatch`
 
-Four jobs, each with its own `if:` condition and minimal `permissions:`:
+Three jobs, each with its own `if:` condition and minimal `permissions:`:
 
 1. **`docker-build`** — Docker build check, no push; runs on PRs and branch
    pushes (skipped on tag push). Permissions: `contents: read`
@@ -68,15 +69,34 @@ Four jobs, each with its own `if:` condition and minimal `permissions:`:
    - Dry-run preview → publish (dry-run only under `act`)
    - Writes job summary with gate values and outcome
 
-4. **`publish`** — Docker + Helm push to GHCR; runs on tag push OR after
-   `release` produces a version; gated by `CANONICAL_REPOSITORY` match +
-   individual `PUBLISH_DOCKER_IMAGE` / `PUBLISH_HELM_CHART` flags.
+> Artifact publishing (Docker + Helm) is handled by `publish.yml` — see below.
+
+See [`WHY_NO_RELEASE.md`](./WHY_NO_RELEASE.md) for the full release diagnosis
+guide.
+
+---
+
+## publish.yml — Publish
+
+**Triggers:** tag push `v*.*.*`
+
+Two independent jobs, each gated by its own feature flag:
+
+1. **`docker`** — builds and pushes the Docker image to GHCR; gated by
+   `PUBLISH_DOCKER_IMAGE=true` + `CANONICAL_REPOSITORY` match.
    Permissions: `contents: read`, `packages: write`
    - Tag strategy: stable `v1.2.3` → `1.2.3`, `1.2`, `1`, `latest`;
      canary `v1.2.3-canary.1` → `1.2.3-canary.1`, `canary`
 
-See [`WHY_NO_RELEASE.md`](./WHY_NO_RELEASE.md) for the full release diagnosis
-guide.
+2. **`helm`** — packages and pushes the Helm chart as an OCI artifact to
+   `ghcr.io/<owner>/charts`; gated by `PUBLISH_HELM_CHART=true` +
+   `CANONICAL_REPOSITORY` match.
+   Permissions: `contents: read`, `packages: write`
+
+Kept separate from `release.yml` to avoid a `needs`-chain skip: when
+triggered by a tag push, `release.yml`'s `release` job is skipped, which
+caused a `publish` job inside `release.yml` to be skipped even with
+`always()` in its `if` condition.
 
 ---
 
@@ -163,8 +183,8 @@ for the complete list.
 | `ENABLE_SONAR` | on | SonarCloud analysis in `ci` |
 | `ENABLE_MD_LINT` | on | markdownlint job in `ci` |
 | `ENABLE_SEMANTIC_RELEASE` | off | Release job in `release` |
-| `PUBLISH_DOCKER_IMAGE` | off | Docker publish in `release` |
-| `PUBLISH_HELM_CHART` | off | Helm publish in `release` |
+| `PUBLISH_DOCKER_IMAGE` | off | Docker publish in `publish` |
+| `PUBLISH_HELM_CHART` | off | Helm publish in `publish` |
 | `GUARD_RELEASE_ARTIFACTS` | on | CHANGELOG guard in `changelog-guard` |
 | `ENABLE_DOCTOR_SNAPSHOT` | on | `doctor` workflow |
 

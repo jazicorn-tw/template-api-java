@@ -20,8 +20,8 @@ References:
 
 Current state:
 
-- Helm charts are linted in CI
-- Charts are not published
+- Helm charts are linted in CI (`release.yml` / `helm-lint` job)
+- Charts are published to GHCR as OCI artifacts on tag push (`publish.yml` / `helm` job), gated by `PUBLISH_HELM_CHART=true`
 - Kubernetes is not required to run or deploy the application
 
 All comments in `helm/` templates reference **ADR-009** when describing
@@ -41,10 +41,9 @@ helm/app
 
 ## What we do today
 
-We only:
-
-- keep a minimal chart in the repo
-- run `helm lint` in CI to ensure the chart stays valid
+- Keep a minimal chart in the repo
+- Run `helm lint` in CI to ensure the chart stays valid
+- Publish the chart as an OCI artifact to `ghcr.io/<owner>/charts` on each `vX.Y.Z` release (when `PUBLISH_HELM_CHART=true`)
 
 No cluster is required.
 
@@ -67,15 +66,12 @@ Environment variables are documented in `.env.example` and mirrored in
 
 ## CI
 
-The `Build Image` workflow also runs:
+`release.yml` runs `helm lint helm/app` on every PR and branch push.
 
-```bash
-helm lint helm/app
-```
+`publish.yml` packages and pushes the chart to GHCR on every `vX.Y.Z` tag push (gated by `PUBLISH_HELM_CHART=true`).
 
 ## Future plan
 
 When we extract services (monorepo multi-service), we will:
 
-- publish Helm charts on semantic-release tags (`vX.Y.Z`)
-- deploy per-service to Kubernetes using those charts
+- deploy per-service to Kubernetes using the published charts
