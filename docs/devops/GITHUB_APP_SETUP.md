@@ -28,7 +28,9 @@ This is a **one-time setup per repository**.
    - **Homepage URL:** your repo URL (required but not used)
    - **Webhook:** uncheck "Active" — this App does not need webhooks
 3. Under **Permissions → Repository permissions**, set:
-   - **Contents:** Read & write (to push the changelog commit)
+   - **Contents:** Read & write (to push the changelog commit and tags)
+   - **Workflows:** Read & write (required — tags that point to commits containing
+     workflow files will be rejected without this permission)
    - **Pull requests:** Read-only (optional, for PR status)
 4. Under **Where can this GitHub App be installed**, select:
    - **Only on this account** (unless you want org-wide reuse)
