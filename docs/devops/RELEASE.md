@@ -229,7 +229,15 @@ If already installed at the org level, confirm this repo is included
 #### Step 3 — Allow the App to bypass branch protection
 
 Because the changelog commit is pushed to `main`, the GitHub App must be allowed
-to **bypass the `main` ruleset**.
+to **bypass the `main` ruleset**:
+
+1. **Settings → Rules → Rulesets → `main`**
+2. **Bypass list → Add bypass**
+3. Search for your App by name, select it, set role to **Always bypass**
+4. Save
+
+> For full setup instructions (creating the App, generating keys, installing on the repo),
+> see [`GITHUB_APP_SETUP.md`](./GITHUB_APP_SETUP.md).
 
 ---
 
