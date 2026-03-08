@@ -154,7 +154,7 @@ async function main() {
   let analyzeCommits;
   try {
     const mod = await import("@semantic-release/commit-analyzer");
-    analyzeCommits = mod.default || mod;
+    analyzeCommits = mod.analyzeCommits || mod.default || mod;
   } catch {
     // Keep it quiet; the bash script can fall back to heuristic.
     process.exit(3);
@@ -165,8 +165,10 @@ async function main() {
 
   const commits = [{ message, hash: "LOCAL", committerDate: new Date().toISOString() }];
 
-  // analyzeCommits returns: "major" | "minor" | "patch" | null
-  const result = await analyzeCommits({ cwd: repoRoot }, { commits, ...analyzerOpts });
+  // analyzeCommits(pluginConfig, context) — logger must be in context (2nd arg)
+  const noop = () => {};
+  const logger = { log: noop, info: noop, warn: noop, error: noop, debug: noop };
+  const result = await analyzeCommits({ ...analyzerOpts }, { cwd: repoRoot, logger, commits });
   const impact = result ?? "none";
 
   const parsed = parseConventional(message);
