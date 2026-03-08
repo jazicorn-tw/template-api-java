@@ -1,3 +1,12 @@
+---
+created_by:   jazicorn-tw
+created_date: 2026-03-08
+updated_by:   jazicorn-tw
+updated_date: 2026-03-08
+status:       draft
+tags:         [onboarding, dx, api, spring, build]
+description:  "Production-grade Spring Boot 4 + Gradle backend API template with CI-first quality gates, TDD, PostgreSQL, and Testcontainers."
+---
 <!-- markdownlint-disable MD033 -->
 
 <h1 align="center">
@@ -113,14 +122,14 @@ Quick-start examples: [`docs/onboarding/QUICK_START.md`](docs/onboarding/QUICK_S
 
 ## 🗺️ Roadmap (high level)
 
-| Phase | Focus |
-| ---: | --- |
-| 0 | Project skeleton & DX infrastructure |
-| 1 | Core CRUD domain |
-| 2 | External API integration |
-| 3 | Domain feature 3 *(define yours)* |
-| 4 | Domain feature 4 *(define yours)* |
-| 5 | Security & hardening |
+| Phase | Focus                                |
+| ----: | ------------------------------------ |
+|     0 | Project skeleton & DX infrastructure |
+|     1 | Core CRUD domain                     |
+|     2 | External API integration             |
+|     3 | Domain feature 3 *(define yours)*    |
+|     4 | Domain feature 4 *(define yours)*    |
+|     5 | Security & hardening                 |
 
 ---
 

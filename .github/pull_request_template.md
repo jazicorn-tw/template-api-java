@@ -1,3 +1,12 @@
+---
+created_by:   jazicorn-tw
+created_date: 2026-03-08
+updated_by:   jazicorn-tw
+updated_date: 2026-03-08
+status:       draft
+tags:         [ci, commit, qa]
+description:  "Pull request template covering change summary, scope, risk, evidence, tests, quality gates, ADR references, and reviewer checklist."
+---
 # Pull Request
 
 ## Summary
@@ -50,11 +59,11 @@
 
 > Use the lowest layer that covers the behaviour being tested.
 
-| What | Layer | Tooling |
-| ---- | ----- | ------- |
-| Business rules, no I/O | Service unit | JUnit 5 + Mockito |
-| HTTP contract | Controller slice | `@WebMvcTest` + `@MockitoBean` |
-| Database persistence | Integration | `extends BaseIntegrationTest` |
+| What                   | Layer            | Tooling                        |
+| ---------------------- | ---------------- | ------------------------------ |
+| Business rules, no I/O | Service unit     | JUnit 5 + Mockito              |
+| HTTP contract          | Controller slice | `@WebMvcTest` + `@MockitoBean` |
+| Database persistence   | Integration      | `extends BaseIntegrationTest`  |
 
 - [ ] Tests added or updated at the appropriate layer
 - [ ] No `@ServiceConnection` — classic Testcontainers only (`extends BaseIntegrationTest`)

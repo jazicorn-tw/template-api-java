@@ -4,7 +4,6 @@ about: Something is broken or behaving unexpectedly
 title: ""
 labels: bug
 ---
-
 ## What happened?
 
 <!-- A clear description of the bug. -->
@@ -21,12 +20,12 @@ labels: bug
 
 ## Environment
 
-| Field | Value |
-| ----- | ----- |
-| Branch / tag | |
-| Java version | <!-- e.g. 21.0.3 --> |
-| OS | |
-| Docker / Colima | |
+| Field           | Value                |
+| --------------- | -------------------- |
+| Branch / tag    |                      |
+| Java version    | <!-- e.g. 21.0.3 --> |
+| OS              |                      |
+| Docker / Colima |                      |
 
 ## Logs / output
 

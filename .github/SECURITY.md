@@ -1,11 +1,20 @@
+---
+created_by:   jazicorn-tw
+created_date: 2026-03-08
+updated_by:   jazicorn-tw
+updated_date: 2026-03-08
+status:       draft
+tags:         [devops, ci, deploy]
+description:  "Security policy covering supported versions, vulnerability reporting, and automated scanning via Dependabot and CodeQL."
+---
 # Security Policy
 
 ## Supported versions
 
-| Version | Supported |
-| ------- | --------- |
-| latest `main` | ✅ |
-| older tags | ❌ |
+| Version       | Supported |
+| ------------- | --------- |
+| latest `main` | ✅        |
+| older tags    | ❌        |
 
 ## Reporting a vulnerability
 

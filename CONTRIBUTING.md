@@ -1,3 +1,12 @@
+---
+created_by:   jazicorn-tw
+created_date: 2026-03-08
+updated_by:   jazicorn-tw
+updated_date: 2026-03-08
+status:       draft
+tags:         [onboarding, dx, commit, test, ci, qa]
+description:  "Contribution guide covering TDD workflow, code style, quality gates, branching strategy, and testing requirements."
+---
 # Contributing
 
 Thank you for your interest in contributing! 🤝
@@ -119,12 +128,12 @@ feature/* → dev → staging → main
 
 Every PR **must include appropriate tests**:
 
-| Layer | Required Tests |
-| --- | --- |
-| Services | Unit (Mockito) |
+| Layer       | Required Tests                 |
+| ----------- | ------------------------------ |
+| Services    | Unit (Mockito)                 |
 | Controllers | `@WebMvcTest` + `@MockitoBean` |
-| Integration | Testcontainers (PostgreSQL) |
-| Security | `spring-security-test` |
+| Integration | Testcontainers (PostgreSQL)    |
+| Security    | `spring-security-test`         |
 
 PRs without tests or with reduced coverage **will not be merged**.
 
