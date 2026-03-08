@@ -11,7 +11,7 @@ make quality
 ```
 
 Fix order matters: **Spotless first** (it rewrites files), then
-Checkstyle, then PMD, then SpotBugs, then markdownlint.
+Checkstyle, then PMD, then SpotBugs, then Jacoco coverage, then markdownlint.
 
 ---
 
@@ -223,6 +223,41 @@ used without a null check.
 
 **Fix:** Add a null check, use `Optional`, or annotate with
 `@NonNull` to signal intent.
+
+---
+
+## Jacoco coverage
+
+Minimum threshold: **70% line coverage** (configured in `build.gradle` →
+`jacocoTestCoverageVerification`). The threshold applies to the whole project
+excluding DTOs, exceptions, config, and migrations.
+
+### `Rule violated for bundle <project>: lines covered ratio is N, but expected minimum is 0.7`
+
+**Cause:** Overall line coverage dropped below 70%.
+
+**Fix:** Add or complete tests for the uncovered code. To see a coverage report locally:
+
+```bash
+./gradlew test jacocoTestReport
+open build/reports/jacoco/test/html/index.html
+```
+
+To raise or lower the threshold, edit `build.gradle`:
+
+```groovy
+jacocoTestCoverageVerification {
+  violationRules {
+    rule {
+      limit {
+        counter = 'LINE'
+        value = 'COVEREDRATIO'
+        minimum = 0.70  // adjust here
+      }
+    }
+  }
+}
+```
 
 ---
 

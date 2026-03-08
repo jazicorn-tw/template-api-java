@@ -44,6 +44,19 @@ helm/app
 - Keep a minimal chart in the repo
 - Run `helm lint` in CI to ensure the chart stays valid
 - Publish the chart as an OCI artifact to `ghcr.io/<owner>/charts` on each `vX.Y.Z` release (when `PUBLISH_HELM_CHART=true`)
+- Default resource requests and limits are set in `helm/app/values.yaml`:
+
+```yaml
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+```
+
+Override per environment in your deployment values file.
 
 No cluster is required.
 

@@ -28,8 +28,11 @@ Four parallel / sequenced jobs:
 1. **`test`** — compile + `./gradlew test` with Testcontainers (requires Docker).
    - Docker sanity check (`docker version` / `docker info`)
    - Full `act` + Testcontainers compatibility env vars
+   - Jacoco: coverage report + **70% line coverage minimum** enforced via
+     `jacocoTestCoverageVerification` (build fails below threshold)
    - SonarCloud: `./gradlew jacocoTestReport sonar` — gated by
-     `ENABLE_SONAR != 'false'`; requires `SONAR_TOKEN`; skipped under `act`
+     `ENABLE_SONAR != 'false'`; requires `SONAR_TOKEN`; skipped under `act`.
+     DTOs, exceptions, config, and migrations are excluded from coverage metrics.
    - Uploads test report artifact on failure
 
 2. **`quality`** — Spotless + static analysis (no Docker, no Sonar, runs in
@@ -87,6 +90,7 @@ Two independent jobs, each gated by its own feature flag:
    Permissions: `contents: read`, `packages: write`
    - Tag strategy: stable `v1.2.3` → `1.2.3`, `1.2`, `1`, `latest`;
      canary `v1.2.3-canary.1` → `1.2.3-canary.1`, `canary`
+   - Builds `linux/amd64` and `linux/arm64` (Apple Silicon native)
 
 2. **`helm`** — packages and pushes the Helm chart as an OCI artifact to
    `ghcr.io/<owner>/charts`; gated by `PUBLISH_HELM_CHART=true` +
@@ -113,8 +117,9 @@ Single job:
   suite
 - Builds the project via CodeQL autobuild (no Docker required)
 - Uploads results as SARIF to the **Security → Code scanning** tab
+- On PRs: posts (or updates) a summary comment with the issue count and a link
+  to the Security tab; uses an idempotent marker so the comment updates in place
 
-On PRs, CodeQL posts inline annotations on changed lines where issues are found.
 The weekly schedule catches new vulnerability rules published between pushes.
 
 **To disable:**

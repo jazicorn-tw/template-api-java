@@ -83,4 +83,7 @@ git push origin v0.0.0
 | `your-org` | GitHub org or username (e.g. `acme`) |
 | `com.example` | Java base package (e.g. `com.acme`) |
 
-See [PROJECT_SETUP.md §2](./PROJECT_SETUP.md#2-replace-template-placeholders) for the `sed` commands.
+**Quick option:** `make init-project name=my-api owner=acme` replaces `{{project-name}}`,
+`your-org`, and `jazicorn-tw` across all key files automatically.
+
+See [PROJECT_SETUP.md §2](./PROJECT_SETUP.md#2-replace-template-placeholders) for full details.

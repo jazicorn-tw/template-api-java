@@ -57,7 +57,16 @@ There are two kinds of placeholders:
 | `your-org` | GitHub org or username | `acme` |
 | `com.example` | Your Java base package | `com.acme` |
 
-Run these from the repo root (macOS/Linux):
+**Quick option (recommended):** use the init-project script to replace the first two tokens
+across all key files at once:
+
+```bash
+make init-project name=my-api owner=acme
+# or dry-run first to preview changes:
+make init-project name=my-api owner=acme dry-run=true
+```
+
+**Manual option** — run these from the repo root (macOS/Linux):
 
 ```bash
 # {{project-name}}
@@ -247,8 +256,7 @@ To adapt it:
 - [ ] Prerequisites installed (`make doctor` passes)
 - [ ] `npm install` run after cloning
 - [ ] Repo created from template
-- [ ] `{{project-name}}` replaced everywhere
-- [ ] `your-org` replaced everywhere
+- [ ] `{{project-name}}` and `your-org` replaced (`make init-project name=X owner=Y`)
 - [ ] `com.example` replaced — Java packages renamed
 - [ ] `.env` created and `APP_NAME` set
 - [ ] `SPRING_DATASOURCE_URL` and `SPRING_DATASOURCE_USERNAME` updated to match `APP_NAME`

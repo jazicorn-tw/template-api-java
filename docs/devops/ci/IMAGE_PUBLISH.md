@@ -119,7 +119,7 @@ The publish job:
 2. Sets up Docker Buildx
 3. Logs into GHCR using `GITHUB_TOKEN`
 4. Extracts tags/labels from the Git tag via `docker/metadata-action`
-5. Builds and pushes `linux/amd64`
+5. Builds and pushes `linux/amd64` and `linux/arm64` (Apple Silicon native)
 
 Build-push configuration:
 
@@ -128,7 +128,7 @@ with:
   context: .
   file: ./Dockerfile
   push: true
-  platforms: linux/amd64
+  platforms: linux/amd64,linux/arm64
   tags: ${{ steps.meta.outputs.tags }}
   labels: ${{ steps.meta.outputs.labels }}
   cache-from: type=gha
