@@ -1,9 +1,12 @@
 name: Release
 
 # Handles the CI and release pipeline:
-#   docker-build  — build check on PRs and branch pushes (no push)
-#   helm-lint     — Helm chart validation on PRs and branch pushes
-#   release       — semantic-release on main/canary (gated)
+#   docker-build  — build check on PRs (no push); skipped on workflow_run
+#   helm-lint     — Helm chart validation on PRs; skipped on workflow_run
+#   release       — semantic-release on main/canary, gated on CI workflow success
+#
+# The release job is triggered via workflow_run after the CI workflow completes
+# successfully on main or canary. It will not run if any CI job fails.
 #
 # Docker + Helm publishing lives in publish.yml (triggered by tag push).
 
@@ -11,8 +14,11 @@ on:
   pull_request:
     branches: [ main, staging, canary ]
   push:
-    branches: [ main, staging, canary ]
     tags: [ 'v*.*.*' ]
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [ main, canary ]
   workflow_dispatch:
     inputs:
       enable_release:
@@ -43,8 +49,8 @@ jobs:
     name: Docker build (no push)
     runs-on: ubuntu-latest
 
-    # Skip on tag pushes — build was already validated on the branch push.
-    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+    # Skip on tag pushes and workflow_run events — build is validated by CI or the branch push.
+    if: ${{ !startsWith(github.ref, 'refs/tags/') && github.event_name != 'workflow_run' }}
 
     permissions:
       contents: read
@@ -78,8 +84,8 @@ jobs:
     name: Helm lint (CI only)
     runs-on: ubuntu-latest
 
-    # Skip on tag pushes.
-    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+    # Skip on tag pushes and workflow_run events — validated by CI or the branch push.
+    if: ${{ !startsWith(github.ref, 'refs/tags/') && github.event_name != 'workflow_run' }}
 
     permissions:
       contents: read
@@ -115,9 +121,9 @@ jobs:
   # ── Semantic release ──────────────────────────────────────────────────────────
   release:
     needs: [docker-build, helm-lint]
-    # Run only on push to main/canary or manual dispatch — not PRs or tag pushes.
-    # always() lets this job evaluate even when docker-build/helm-lint are skipped
-    # (tag pushes skip those jobs). The needs-result checks guard against failures.
+    # Run only after CI passes on main/canary (workflow_run) or on manual dispatch.
+    # docker-build and helm-lint are skipped on workflow_run, so their results
+    # will be 'skipped' — the needs-result checks allow that.
     # Gate releases behind ENABLE_SEMANTIC_RELEASE=true (repo variable) or
     # enable_release=true (manual input).
     if: >-
@@ -126,8 +132,9 @@ jobs:
       (needs.helm-lint.result == 'success' || needs.helm-lint.result == 'skipped') &&
       (inputs.enable_release == 'true' || vars.ENABLE_SEMANTIC_RELEASE == 'true') &&
       (github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'push' &&
-      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/canary')))
+      (github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      (github.event.workflow_run.head_branch == 'main' || github.event.workflow_run.head_branch == 'canary')))
     runs-on: ubuntu-latest
 
     permissions:
