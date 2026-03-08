@@ -40,7 +40,53 @@ fi
 cz check --commit-msg-file "$1"
 
 # ---------------------------------------------------------------------
-# 1.5) Guard: reserve (release) scope for automation only
+# 1.5) Scope validation against .config/tags.yml
+# ---------------------------------------------------------------------
+#
+# Scopes are optional. When present, the scope must be in the canonical
+# vocabulary defined in .config/tags.yml — the same list used for docs
+# frontmatter tag validation.
+#
+# The (release) scope is handled separately below (section 1.6).
+#
+# Bypass (rare, intentional):
+#   SKIP_SCOPE_CHECK=1 git commit ...
+# ---------------------------------------------------------------------
+
+_commit_header="$(head -n 1 "$1" | tr -d '\r')"
+_commit_scope=""
+_scope_re='^[a-zA-Z0-9]+\(([^)]+)\):'
+if [[ "$_commit_header" =~ $_scope_re ]]; then
+  _commit_scope="${BASH_REMATCH[1]}"
+fi
+
+if [[ -n "$_commit_scope" && "$_commit_scope" != "release" && "${SKIP_SCOPE_CHECK:-0}" != "1" ]]; then
+  _repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+  _tags_file="${_repo_root}/.config/tags.yml"
+  if [[ -f "$_tags_file" ]]; then
+    _valid_scopes=()
+    while IFS= read -r _scope_line; do
+      _valid_scopes+=("$_scope_line")
+    done < <(awk '/^tags:/{p=1;next} /^[[:alpha:]]/{p=0} p && /^  - /{sub(/^  - /,""); print}' "$_tags_file")
+
+    _scope_valid=0
+    for _s in "${_valid_scopes[@]}"; do
+      [[ "$_commit_scope" == "$_s" ]] && { _scope_valid=1; break; }
+    done
+
+    if [[ $_scope_valid -eq 0 ]]; then
+      printf '\ncommit-msg: ❌ scope validation failed\n' >&2
+      printf '\n  Invalid scope: (%s)\n\n' "$_commit_scope" >&2
+      printf '  Allowed scopes (.config/tags.yml):\n\n' >&2
+      printf '    ' >&2; printf '%s  ' "${_valid_scopes[@]}" >&2; printf '\n\n' >&2
+      printf '  Or omit the scope:  type: description\n\n' >&2
+      exit 1
+    fi
+  fi
+fi
+
+# ---------------------------------------------------------------------
+# 1.6) Guard: reserve (release) scope for automation only
 # ---------------------------------------------------------------------
 #
 # Rationale:
@@ -77,11 +123,11 @@ semantic-release and GitHub Actions.
       chore(ci): <description>
 
   • Release documentation or intent:
-      docs(release-notes): <description>
+      docs: <description>
 
   • General changes:
       refactor: <description>
-      docs: <description>
+      chore: <description>
 
 If you intend to publish a release, do so via the release workflow —
 not a manual commit message.

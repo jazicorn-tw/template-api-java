@@ -229,14 +229,18 @@ if [[ ${#md_files[@]} -gt 0 ]]; then
   fi
 fi
 
-# ── Markdown lint (markdownlint-cli2 on staged files only) ───────────────────
-# Runs only on the .md files being added — not the full repo — so unrelated
-# markdown violations never block an unrelated git add.
+# ── Markdown lint (markdownlint-cli2) ────────────────────────────────────────
+# Lints the full glob coverage defined by .markdownlint-cli2.jsonc (matching
+# CI). The config file is required — abort if missing.
 if [[ ${#md_files[@]} -gt 0 ]]; then
   _step "lint-docs"
-  printf '    %s\n' "${md_files[@]}"
-  if "$REPO_ROOT/node_modules/.bin/markdownlint-cli2" "${md_files[@]}" 2>&1 \
-      | sed '/^Finding:/d' | _indent; then
+  _cli2_cfg="$REPO_ROOT/.markdownlint-cli2.jsonc"
+  if [[ ! -f "$_cli2_cfg" ]]; then
+    _fail "lint-docs aborted — .markdownlint-cli2.jsonc not found in repo root"
+    exit 1
+  fi
+  if (cd "$REPO_ROOT" && "$REPO_ROOT/node_modules/.bin/markdownlint-cli2") 2>&1 \
+      | sed '/^Finding:\|^Linting:/d' | _indent; then
     _pass "lint-docs"
   else
     _fail "lint-docs failed — see errors above, then re-run git add"
