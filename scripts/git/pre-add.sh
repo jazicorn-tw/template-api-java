@@ -163,10 +163,14 @@ fi
 # ── Executable bits (make exec-bits) ──────────────────────────────────────────
 # Auto-fixes chmod +x and stages the mode change (strict: 2, autoStage: true).
 if [[ ${#script_files[@]} -gt 0 ]]; then
-  _step "exec-bits (${#script_files[@]} script file(s))"
-  if make exec-bits 2>&1 | _indent; then
-    _pass "exec-bits"
+  _exec_out=$(make exec-bits 2>&1); _exec_rc=$?
+  if [[ $_exec_rc -eq 0 ]]; then
+    _pass "exec-bits (${#script_files[@]} script file(s))"
   else
+    _step "exec-bits (${#script_files[@]} script file(s))"
+  fi
+  printf '%s\n' "$_exec_out" | _indent
+  if [[ $_exec_rc -ne 0 ]]; then
     _fail "exec-bits failed — see errors above, then re-run git add"
   fi
 fi
