@@ -188,6 +188,12 @@ jobs:
           # Ensure the token never shows up in logs
           echo "::add-mask::${GH_TOKEN}"
 
+          # Remove the GITHUB_TOKEN credential header injected by actions/checkout.
+          # Without this, git sends both the extraheader (GITHUB_TOKEN) and the
+          # URL-embedded App token — GitHub uses GITHUB_TOKEN, and tag pushes made
+          # with GITHUB_TOKEN never trigger downstream workflows (publish.yml).
+          git config --unset-all "http.https://github.com/.extraheader" || true
+
           # Make origin use HTTPS (semantic-release calls git under the hood)
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
 
