@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-07
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [faq, ci]
 description:  "Why didn't my commit create a release?"
----
+-->
 # Why didn't my commit create a release?
 
 This article explains why semantic-release may not produce a new version after

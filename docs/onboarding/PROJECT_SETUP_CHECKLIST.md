@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-07
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [onboarding]
 description:  "Project Configuration Checklist"
----
+-->
 # Project Configuration Checklist
 
 Quick reference for everything needed to configure a new project from this template.

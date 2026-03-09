@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-05
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [faq, dx]
 description:  "Executable Bits: What’s Actually Going On"
----
+-->
 # Executable Bits: What’s Actually Going On
 
 This document clarifies a common point of confusion when working with scripts, Git, and local tooling in this repository.

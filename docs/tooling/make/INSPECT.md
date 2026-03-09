@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-05
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [tooling, make]
 description:  "Makefile Inspection (`inspect-mk`)"
----
+-->
 # 🔍 Makefile Inspection (`inspect-mk`)
 
 This document explains the **Makefile inspection tooling** provided by the

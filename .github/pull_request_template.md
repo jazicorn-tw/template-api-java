@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-08
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       draft
 tags:         [ci, commit, qa]
 description:  "Pull request template covering change summary, scope, risk, evidence, tests, quality gates, ADR references, and reviewer checklist."
----
+-->
 # Pull Request
 
 ## Summary

@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-05
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [devops]
 description:  "`/ping` vs `/health` (Actuator) — What’s the Difference?"
----
+-->
 <!-- markdownlint-disable-file MD024 -->
 # `/ping` vs `/health` (Actuator) — What’s the Difference?
 

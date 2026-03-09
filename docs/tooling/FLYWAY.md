@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-05
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [tooling]
 description:  "Database Migration Troubleshooting Guide"
----
+-->
 # 🛠 Database Migration Troubleshooting Guide
 
 This document covers the resolution for `NoClassDefFoundError: JavaPluginConvention` and other Gradle-specific failures

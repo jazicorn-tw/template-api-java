@@ -131,10 +131,16 @@ printf '  %s\n' "$_label"
 _rule
 
 # ── Frontmatter auto-patch ────────────────────────────────────────────────────
-# Injects or refreshes YAML frontmatter in staged .md files.
+# Injects or refreshes HTML-comment frontmatter in staged .md files.
 # created_by / created_date are written once (never overwritten).
 # updated_by / updated_date are refreshed on every git add.
 # status / tags / description are left untouched once written.
+#
+# Format: HTML comment block so metadata is hidden on GitHub.
+#   <!--
+#   created_by:   ...
+#   ...
+#   -->
 if [[ ${#md_files[@]} -gt 0 ]]; then
   _fm_author=$(git config user.name 2>/dev/null \
     || git config user.email 2>/dev/null \
@@ -146,7 +152,7 @@ if [[ ${#md_files[@]} -gt 0 ]]; then
     _fp="$REPO_ROOT/$_f"
     [[ -f "$_fp" ]] || _fp="$_f"
 
-    if head -1 "$_fp" | grep -q '^---$'; then
+    if head -1 "$_fp" | grep -q '^<!--$'; then
       # Has frontmatter — refresh updated_by and updated_date only
       sed -i '' \
         -e "s/^updated_by:.*$/updated_by:   $_fm_author/" \
@@ -156,7 +162,7 @@ if [[ ${#md_files[@]} -gt 0 ]]; then
       # No frontmatter — prepend full block (new files start as draft)
       _tmp=$(mktemp)
       {
-        echo '---'
+        echo '<!--'
         printf 'created_by:   %s\n' "$_fm_author"
         printf 'created_date: %s\n' "$_fm_date"
         printf 'updated_by:   %s\n' "$_fm_author"
@@ -164,7 +170,7 @@ if [[ ${#md_files[@]} -gt 0 ]]; then
         echo 'status:       draft'
         echo 'tags:         []'
         echo 'description:  ""'
-        echo '---'
+        echo '-->'
         cat "$_fp"
       } > "$_tmp" && mv "$_tmp" "$_fp"
     fi

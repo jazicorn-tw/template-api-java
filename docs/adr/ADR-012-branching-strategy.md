@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-08
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [adr]
 description:  "ADR-012: Branching Strategy"
----
+-->
 # ADR-012: Branching Strategy
 
 - **Status:** Accepted

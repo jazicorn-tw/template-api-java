@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-05
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [tooling]
 description:  "Doctor (Local Environment Sanity)"
----
+-->
 # 🩺 Doctor (Local Environment Sanity)
 
 Doctor is a **local-first environment sanity check** designed to catch setup issues

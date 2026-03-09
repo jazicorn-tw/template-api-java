@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-05
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [devops, ci, act]
 description:  "`.vars` — Repository Variables"
----
+-->
 # 🔧 `.vars` — Repository Variables
 
 This document explains the purpose and usage of the `.vars` file in this repository.

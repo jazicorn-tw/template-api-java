@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-05
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [env]
 description:  "Environment Variables — Quick Reference"
----
+-->
 # ⚡ Environment Variables — Quick Reference
 
 This section is a **high-signal index** of all supported environment variables.  

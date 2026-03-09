@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-05
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [onboarding]
 description:  "Day-3 / Going Deeper"
----
+-->
 # Day-3 / Going Deeper
 
 You have a merged PR. Day-3 is about working confidently at full speed:

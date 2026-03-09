@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-05
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [tooling, make]
 description:  "Makefile Decades & Layering Guide"
----
+-->
 # Makefile Decades & Layering Guide
 
 This document defines the **decade-based structure** used by this repository’s Makefile system.

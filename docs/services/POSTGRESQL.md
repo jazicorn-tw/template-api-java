@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-05
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [services]
 description:  "PostgreSQL (Service)"
----
+-->
 # 🐘 PostgreSQL (Service)
 
 This project **standardizes on PostgreSQL everywhere** — local development, CI, and production-like environments.

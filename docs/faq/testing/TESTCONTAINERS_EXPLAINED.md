@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-05
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [faq, test]
 description:  "Testcontainers: What's Actually Going On"
----
+-->
 # Testcontainers: What's Actually Going On
 
 If you've wondered why tests require Docker, why the first run takes

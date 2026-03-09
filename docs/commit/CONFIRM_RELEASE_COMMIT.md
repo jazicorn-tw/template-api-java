@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-05
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [commit]
 description:  "Syncing the commit-msg prompt with semantic-release"
----
+-->
 # Syncing the commit-msg prompt with semantic-release
 
 This repository keeps the **commit-msg guard** in sync with **semantic-release**

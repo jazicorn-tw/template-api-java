@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-05
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [tooling]
 description:  "Bootstrap Scripts"
----
+-->
 # Bootstrap Scripts
 
 This document describes the purpose and usage of the repo’s bootstrap scripts, and how they interact with **local settings**.

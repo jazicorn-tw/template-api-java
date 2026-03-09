@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-05
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [tooling, make]
 description:  "Where Does This Make Target Go?"
----
+-->
 # Where Does This Make Target Go?
 
 Use this decision tree when adding a new target or deciding which `XX-*.mk` file should own it.

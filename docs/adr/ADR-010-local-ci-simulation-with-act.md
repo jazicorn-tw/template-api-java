@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-05
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [adr]
 description:  "ADR-010: Local CI Simulation with `act`"
----
+-->
 <!-- markdownlint-disable-file MD036 -->
 
 # ADR-010: Local CI Simulation with `act`

@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-07
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [faq, ci]
 description:  "How does SonarCloud work in this project?"
----
+-->
 # How does SonarCloud work in this project?
 
 This article explains what SonarCloud does, when it runs, what it reports,

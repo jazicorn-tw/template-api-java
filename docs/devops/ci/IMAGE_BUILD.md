@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-05
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [devops, ci]
 description:  "️ Docker Build Check (CI – No Push)"
----
+-->
 # 🏗️ Docker Build Check (CI – No Push)
 
 The `docker-build` job in the `release.yml` workflow builds the Docker image

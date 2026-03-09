@@ -72,8 +72,8 @@ _tags_for_path() {
 }
 
 while IFS= read -r -d '' f; do
-  # Skip files that already have frontmatter (first line is ---)
-  if head -1 "$f" | grep -q '^---$'; then
+  # Skip files that already have frontmatter (first line is <!-- or ---)
+  if head -1 "$f" | grep -qE '^(<!--|---)$'; then
     skipped=$(( skipped + 1 ))
     continue
   fi
@@ -96,7 +96,7 @@ while IFS= read -r -d '' f; do
 
   _tmp=$(mktemp)
   {
-    echo '---'
+    echo '<!--'
     printf 'created_by:   %s\n' "$_created_by"
     printf 'created_date: %s\n' "$_created_date"
     printf 'updated_by:   %s\n' "$_updated_by"
@@ -104,7 +104,7 @@ while IFS= read -r -d '' f; do
     echo 'status:       active'
     printf 'tags:         %s\n' "$_tags"
     echo 'description:  ""'
-    echo '---'
+    echo '-->'
     cat "$f"
   } > "$_tmp" && mv "$_tmp" "$f"
 

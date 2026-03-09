@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-05
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [tooling, make]
 description:  "Make macros + variables — how it works in this repo"
----
+-->
 # 🧰 Make macros + variables — how it works in this repo
 
 This repo uses Make as a **thin orchestration layer**:

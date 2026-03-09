@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-07
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [faq, dx]
 description:  "How does the pre-add hook work?"
----
+-->
 # How does the pre-add hook work?
 
 This article explains the shell-level `git add` wrapper that runs lint and

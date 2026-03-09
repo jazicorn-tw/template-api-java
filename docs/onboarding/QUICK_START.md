@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-05
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [onboarding]
 description:  "Quick Start"
----
+-->
 # Quick Start
 
 Get the API running and make your first requests in under 2 minutes.

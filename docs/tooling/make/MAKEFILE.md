@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-05
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [tooling, make]
 description:  "Makefile Guide — how targets are organized and how to use make in this project"
----
+-->
 # 🛠️ Makefile Guide
 
 This repository uses **GNU Make** as a **developer-experience framework**, not a collection of ad-hoc shell aliases.

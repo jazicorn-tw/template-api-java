@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-05
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [commit]
 description:  "Pre-commit hook"
----
+-->
 # Pre-commit hook
 
 This repo uses a **Git `pre-commit` hook** to enforce **ADR-000 quality gates** *before* code leaves your machine.

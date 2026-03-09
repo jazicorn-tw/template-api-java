@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-05
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [phases]
 description:  "Phase 0 — Project Skeleton & DX Infrastructure (v0.0.1)"
----
+-->
 # 🔰 Phase 0 — Project Skeleton & DX Infrastructure (v0.0.1)
 
 > Goal: establish a **production-realistic Spring Boot baseline** with a full developer

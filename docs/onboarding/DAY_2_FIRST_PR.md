@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-05
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [onboarding]
 description:  "Day-2 / First PR Checklist"
----
+-->
 # Day-2 / First PR Checklist
 
 This checklist ensures your **first contribution** follows the project’s

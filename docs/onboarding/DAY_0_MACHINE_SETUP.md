@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-05
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [onboarding]
 description:  "Day-0 / Machine Setup"
----
+-->
 # Day-0 / Machine Setup
 
 This is the **pre-clone checklist** — tools and shell configuration to put in

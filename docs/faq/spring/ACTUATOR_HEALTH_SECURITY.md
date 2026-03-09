@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-07
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       active
 tags:         [faq, spring]
 description:  "Why `management.endpoint.health.show-details=when-authorized`"
----
+-->
 # Why `management.endpoint.health.show-details=when-authorized`
 
 This article explains what the `show-details` setting controls, what Spring Boot exposes

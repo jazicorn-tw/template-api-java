@@ -1,12 +1,12 @@
----
+<!--
 created_by:   jazicorn-tw
 created_date: 2026-03-08
 updated_by:   jazicorn-tw
-updated_date: 2026-03-08
+updated_date: 2026-03-09
 status:       draft
 tags:         [onboarding, dx, commit, test, ci, qa]
 description:  "Contribution guide covering TDD workflow, code style, quality gates, branching strategy, and testing requirements."
----
+-->
 # Contributing
 
 Thank you for your interest in contributing! 🤝
